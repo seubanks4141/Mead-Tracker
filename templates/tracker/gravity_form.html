@@ -1,0 +1,23 @@
+{% extends "tracker/event_form.html" %}
+
+{% block event_title %}{% if form.instance.pk %}Edit gravity reading{% else %}Add gravity reading{% endif %}{% endblock %}
+{% block breadcrumb_label %}{% if form.instance.pk %}Edit gravity{% else %}Add gravity{% endif %}{% endblock %}
+{% block event_eyebrow %}Fermentation reading{% endblock %}
+{% block event_heading %}{% if form.instance.pk %}Correct a gravity reading{% else %}Record specific gravity{% endif %}{% endblock %}
+{% block event_intro %}Log the reading exactly as measured. The trend will appear on the batch chart.{% endblock %}
+{% block event_symbol %}↘{% endblock %}
+{% block event_card_heading %}Gravity measurement{% endblock %}
+{% block submit_label %}{% if form.instance.pk %}Save correction{% else %}Add reading{% endif %}{% endblock %}
+
+{% block event_aside %}
+  <div class="tip-card">
+    <span class="tip-card__icon" aria-hidden="true">⌁</span>
+    <h2>Reading a hydrometer</h2>
+    <p>Float the sanitized hydrometer freely, remove bubbles, and read at the bottom of the liquid’s curve at eye level.</p>
+    <a href="{% url 'tracker:help' %}#hydrometer">Hydrometer guide <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="tip-card tip-card--muted">
+    <h2>Temperature matters</h2>
+    <p>If you know the sample temperature, record it. Hydrometers are calibrated at a particular temperature and warm samples may need correction.</p>
+  </div>
+{% endblock %}

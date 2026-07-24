@@ -1,0 +1,53 @@
+{% with stage=batch.stage_visual %}
+  <div
+    class="batch-mark batch-mark--{{ mark_size|default:'card' }} batch-mark--shape-{{ mark.shape|default:'drop'|slugify }} batch-mark--status-{{ stage.status|default:batch.status|default:'planning'|slugify }} batch-mark--ring-{{ stage.ring_mode|default:'unknown'|slugify }}"
+    style="
+      --mark-rotation: {{ mark.rotation|default:'8' }}deg;
+      --mark-scale: {{ mark.scale|default:'1' }};
+      --mark-color-start: {% if mark.color_start %}{{ mark.color_start }}{% elif mark.palette.highlight %}{{ mark.palette.highlight }}{% else %}#ecc47f{% endif %};
+      --mark-color-end: {% if mark.color_end %}{{ mark.color_end }}{% elif mark.palette.primary %}{{ mark.palette.primary }}{% else %}#aa6819{% endif %};
+      --mark-glow: {% if mark.glow_color %}{{ mark.glow_color }}{% elif mark.palette.accent %}{{ mark.palette.accent }}{% else %}#ecc47f{% endif %};
+      --stage-progress: {% if stage.ring_mode == "gravity" and stage.progress >= 100 %}96{% elif stage.progress != None %}{{ stage.progress|floatformat:'0' }}{% else %}0{% endif %}%;
+    "
+    role="group"
+    aria-label="Visual mark for {{ batch.name }}; stable batch identity{% if mark.ingredient_markers %}; ingredient categories: {% for marker in mark.ingredient_markers %}{{ marker.label }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}"
+  >
+    <span class="batch-mark__glow" aria-hidden="true"></span>
+    {% if stage.progress != None and stage.ring_mode != "none" and stage.ring_mode != "unknown" and stage.ring_mode != "complete" %}
+      <span
+        class="batch-mark__stage-ring"
+        role="meter"
+        aria-label="{{ stage.stage_label|default:'Stage' }}"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="{{ stage.progress|floatformat:'0' }}"
+        aria-valuetext="{% if stage.ring_mode == 'gravity' and stage.progress >= 100 %}Target specific gravity reached in the latest reading; verify stability before changing status{% else %}{{ stage.accessible_summary|default:stage.summary|default:'Stage estimate' }}{% endif %}"
+      ></span>
+    {% else %}
+      <span
+        class="batch-mark__stage-ring"
+        role="img"
+        aria-label="{{ stage.accessible_summary|default:stage.summary|default:'Stage information is not yet available' }}"
+      ></span>
+    {% endif %}
+    <span class="batch-mark__stage-orbit" aria-hidden="true"></span>
+    <span class="batch-mark__stage-badge" aria-hidden="true">
+      {% if stage.status == "complete" %}&#10003;{% elif stage.status == "bottled" %}&#10022;{% elif stage.ring_mode == "unknown" %}?{% elif stage.ring_mode == "forecast" %}&#8776;{% elif stage.ring_mode == "planned" %}&#9684;{% endif %}
+    </span>
+    <span class="batch-mark__body" aria-hidden="true">
+      <span class="batch-mark__shine"></span>
+      <span class="batch-mark__core"></span>
+    </span>
+    {% if mark.ingredient_markers %}
+      <span class="batch-mark__ingredients" aria-hidden="true">
+        {% for marker in mark.ingredient_markers|slice:":5" %}
+          <span
+            class="batch-mark__ingredient batch-mark__ingredient--{{ marker.kind|default:'other'|slugify }}"
+            {% if marker.color %}style="--ingredient-color: {{ marker.color }};"{% endif %}
+            title="{{ marker.label }}"
+          ></span>
+        {% endfor %}
+      </span>
+    {% endif %}
+  </div>
+{% endwith %}

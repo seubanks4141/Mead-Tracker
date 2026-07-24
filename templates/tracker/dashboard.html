@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Your batches · Mead Tracker{% endblock %}
+{% block meta_description %}See active mead batches, recent cellar activity, and current fermentation readings.{% endblock %}
+
+{% block content %}
+  <header class="page-heading page-heading--dashboard">
+    <div>
+      <div class="eyebrow">The meadery</div>
+      <h1>Your batches</h1>
+      <p class="lede">A clear view from first mix to final bottle.</p>
+    </div>
+    <a class="button button--primary button--with-icon" href="{% url 'tracker:batch_create' %}">
+      <span aria-hidden="true">＋</span>
+      Start a batch
+    </a>
+  </header>
+
+  <section class="stat-strip" aria-label="Meadery overview">
+    <div class="stat-card">
+      <span class="stat-card__icon stat-card__icon--amber" aria-hidden="true">◒</span>
+      <div>
+        <span class="stat-card__value">{{ active_count|default:"0" }}</span>
+        <span class="stat-card__label">Active batches</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__icon stat-card__icon--sage" aria-hidden="true">⌁</span>
+      <div>
+        <span class="stat-card__value">{{ fermenting_count|default:"0" }}</span>
+        <span class="stat-card__label">Fermenting now</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-card__icon stat-card__icon--plum" aria-hidden="true">✓</span>
+      <div>
+        <span class="stat-card__value">{{ bottled_count|default:"0" }}</span>
+        <span class="stat-card__label">Bottled batches</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--action">
+      <span class="stat-card__icon stat-card__icon--ink" aria-hidden="true">↧</span>
+      <div>
+        <a href="{% url 'tracker:database_backup' %}">Back up records</a>
+        <span class="stat-card__label">Download the database</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="dashboard-layout">
+    <section class="content-section" aria-labelledby="batch-list-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="batch-list-title">All batches</h2>
+          {% if batches %}<p>{{ batches|length }} batch{{ batches|length|pluralize:"es" }} in your cellar</p>{% endif %}
+          <a class="batch-mark-guide-link" href="{% url 'tracker:help' %}#batch-marks">
+            <span aria-hidden="true">◉</span>
+            How to read batch marks
+          </a>
+        </div>
+        {% if batches %}
+          <label class="search-box">
+            <span class="sr-only">Filter batches</span>
+            <span aria-hidden="true">⌕</span>
+            <input type="search" placeholder="Find a batch…" autocomplete="off" data-batch-search>
+          </label>
+        {% endif %}
+      </div>
+
+      {% if batches %}
+        <div class="batch-grid" data-batch-list>
+          {% for batch in batches %}
+            <article class="batch-card" data-batch-card data-search-text="{{ batch.name }} {{ batch.batch_number }} {{ batch.status }} {{ batch.stage_visual.stage_label }}">
+              <a
+                class="batch-card__main"
+                href="{% url 'tracker:batch_detail' batch.pk %}"
+                aria-label="Open {{ batch.name }}. {{ batch.stage_visual.accessible_summary|default:batch.stage_visual.summary|default:'Stage details available in the batch record' }}"
+              >
+                <div class="batch-card__top">
+                  {% include "tracker/includes/batch_status.html" %}
+                  <span class="batch-card__number">
+                    {% if batch.batch_number %}#{{ batch.batch_number }}{% else %}Batch {{ forloop.revcounter }}{% endif %}
+                  </span>
+                </div>
+                <div class="batch-card__body">
+                  {% with mark=batch.visual_mark %}
+                    {% include "tracker/includes/visual_mark.html" with batch=batch mark=mark mark_size="card" %}
+                  {% endwith %}
+                  <div class="batch-card__identity">
+                    <h3>{{ batch.name|default:"Unnamed mead" }}</h3>
+                    <p class="batch-card__style">
+                      {% if batch.style %}{{ batch.style }}{% else %}Mead batch{% endif %}
+                    </p>
+                    <div class="batch-card__stage-summary">
+                      <strong>{{ batch.stage_visual.stage_label|default:batch.get_status_display|default:"Stage not set" }}</strong>
+                      <span>{{ batch.stage_visual.summary|default:"Add batch details to build a stage summary." }}</span>
+                    </div>
+                  </div>
+                </div>
+                <dl class="batch-card__facts">
+                  <div>
+                    <dt>Started</dt>
+                    <dd>
+                      {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}—{% endif %}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Latest SG</dt>
+                    <dd>
+                      {% with card_gravity=batch.gravity_readings.last %}
+                        {% if card_gravity %}{{ card_gravity.specific_gravity }}{% else %}—{% endif %}
+                      {% endwith %}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Volume</dt>
+                    <dd>
+                      {% if batch.volume %}{{ batch.volume }} {{ batch.volume_unit }}{% elif batch.volume_value %}{{ batch.volume_value }} {{ batch.volume_unit }}{% else %}—{% endif %}
+                    </dd>
+                  </div>
+                </dl>
+                <div class="batch-card__footer">
+                  <span>
+                    {% if batch.updated_at %}Updated {{ batch.updated_at|timesince }} ago{% else %}Ready for an update{% endif %}
+                  </span>
+                  <span class="batch-card__arrow" aria-hidden="true">→</span>
+                </div>
+              </a>
+            </article>
+          {% endfor %}
+        </div>
+        <p class="search-empty" hidden data-search-empty>No batches match that search.</p>
+      {% else %}
+        {% url 'tracker:batch_create' as create_url %}
+        {% include "tracker/includes/empty_state.html" with icon="◒" title="Your first batch starts here" text="Add the recipe, starting gravity, and the little details worth remembering." action_url=create_url action_label="Start a batch" %}
+      {% endif %}
+    </section>
+
+    <aside class="activity-panel" aria-labelledby="activity-title">
+      <div class="section-heading section-heading--compact">
+        <div>
+          <div class="eyebrow">Cellar log</div>
+          <h2 id="activity-title">Recent activity</h2>
+        </div>
+      </div>
+      {% if activity %}
+        <ol class="activity-list">
+          {% for item in activity %}
+            <li>
+              <span class="activity-list__marker activity-list__marker--{{ item.kind|default:'note'|slugify }}" aria-hidden="true">
+                {% if item.kind == "gravity" %}↘{% elif item.kind == "addition" %}+{% elif item.kind == "status" %}✓{% else %}✎{% endif %}
+              </span>
+              <div>
+                <p>
+                  {% if item.batch %}
+                    <a href="{% url 'tracker:batch_detail' item.batch.pk %}">{{ item.batch.name }}</a>
+                  {% endif %}
+                  {{ item.summary|default:item.description }}
+                </p>
+                <time datetime="{{ item.timestamp|date:'c' }}">{{ item.timestamp|timesince }} ago</time>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        <div class="activity-empty">
+          <span aria-hidden="true">✎</span>
+          <p>New readings, notes, and additions will appear here.</p>
+        </div>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

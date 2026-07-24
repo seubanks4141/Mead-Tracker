@@ -1,0 +1,120 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b1c14">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="{% block meta_description %}Track mead batches, gravity readings, additions, and tasting notes.{% endblock %}">
+  <title>{% block title %}Mead Tracker{% endblock %}</title>
+  <link rel="icon" href="{% static 'tracker/img/mark.svg' %}" type="image/svg+xml">
+  <script src="{% static 'tracker/js/theme-init.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'tracker/css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header" data-site-header>
+    <div class="site-header__inner">
+      <a class="brand" href="{% url 'tracker:dashboard' %}" aria-label="Mead Tracker home">
+        <img class="brand__mark" src="{% static 'tracker/img/mark.svg' %}" alt="" width="42" height="42">
+        <span class="brand__words">
+          <strong>Mead Tracker</strong>
+          <small>From must to bottle</small>
+        </span>
+      </a>
+
+      {% if request.user.is_authenticated %}
+        <nav class="primary-nav" id="primary-navigation" aria-label="Primary navigation" data-primary-nav>
+          <a href="{% url 'tracker:dashboard' %}"{% if request.resolver_match.url_name == "dashboard" %} aria-current="page"{% endif %}>Batches</a>
+          <a href="{% url 'tracker:batch_create' %}" class="nav-create">
+            <span aria-hidden="true">＋</span> New batch
+          </a>
+          {% if request.user.is_superuser %}
+            <a href="{% url 'tracker:user_list' %}"{% if request.resolver_match.url_name == "user_list" or request.resolver_match.url_name == "user_create" %} aria-current="page"{% endif %}>Users</a>
+          {% endif %}
+          <a href="{% url 'tracker:help' %}"{% if request.resolver_match.url_name == "help" %} aria-current="page"{% endif %}>Help</a>
+        </nav>
+      {% endif %}
+
+      <div class="site-header__controls">
+        <label class="theme-control">
+          <span class="theme-control__icon" aria-hidden="true" data-theme-icon>◐</span>
+          <span class="sr-only">Color theme</span>
+          <select aria-label="Color theme" data-theme-select>
+            <option value="system">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+
+        {% if request.user.is_authenticated %}
+          <details class="account-menu" data-account-menu>
+            <summary aria-label="Open account menu for {{ request.user.username }}">
+              <span class="account-menu__avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+              <span class="account-menu__username">{{ request.user.username }}</span>
+              <span class="account-menu__chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="account-menu__panel">
+              <div class="account-menu__identity">
+                <span class="account-menu__avatar account-menu__avatar--large" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+                <span>
+                  <small>Signed in as</small>
+                  <strong>{{ request.user.username }}</strong>
+                  {% if request.user.is_superuser %}<em>Administrator</em>{% endif %}
+                </span>
+              </div>
+              <form method="post" action="/accounts/logout/">
+                {% csrf_token %}
+                <button type="submit">
+                  <span aria-hidden="true">↪</span>
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </details>
+
+          <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation" data-nav-toggle>
+            <span class="sr-only">Toggle navigation</span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="message-region page-shell" aria-live="polite" aria-atomic="true">
+      {% for message in messages %}
+        <div class="message message--{{ message.tags|default:'info' }}" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}" data-message>
+          <span class="message__icon" aria-hidden="true">
+            {% if message.tags == "success" %}✓{% elif message.tags == "error" %}!{% elif message.tags == "warning" %}△{% else %}i{% endif %}
+          </span>
+          <span>{{ message }}</span>
+          <button type="button" class="message__close" aria-label="Dismiss message" data-dismiss-message>×</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main id="main-content" class="{% block main_class %}page-shell page-main{% endblock %}" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell site-footer__inner">
+      <p>Mead Tracker <span aria-hidden="true">·</span> Keep good notes. Make better mead.</p>
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'tracker:help' %}">Brewing help</a>
+      {% endif %}
+    </div>
+  </footer>
+
+  <script src="{% static 'tracker/js/app.js' %}" defer></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

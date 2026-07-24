@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Database backup · Mead Tracker{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li aria-current="page">Backup</li>
+    </ol>
+  </nav>
+
+  <div class="backup-layout">
+    <section class="backup-card" aria-labelledby="backup-heading">
+      <span class="backup-card__icon" aria-hidden="true">↧</span>
+      <div class="eyebrow">Protect your records</div>
+      <h1 id="backup-heading">Download a database backup</h1>
+      <p class="lede">Save a dated copy of the Mead Tracker database somewhere separate from the server.</p>
+
+      <dl class="backup-facts">
+        <div><dt>Database</dt><dd>{{ database_name|default:"Mead Tracker SQLite" }}</dd></div>
+        <div><dt>Last backup</dt><dd>{% if last_backup_at %}{{ last_backup_at|date:"M j, Y, g:i A" }}{% else %}Not recorded{% endif %}</dd></div>
+        <div><dt>Includes</dt><dd>Batches, additions, readings, notes, and history</dd></div>
+      </dl>
+
+      <form method="post">
+        {% csrf_token %}
+        <button class="button button--primary button--wide" type="submit">
+          <span aria-hidden="true">↧</span> Create and download backup
+        </button>
+      </form>
+      <p class="backup-card__note">Treat the downloaded file as private: it contains your complete production records.</p>
+    </section>
+
+    <aside class="backup-guide">
+      <h2>A practical backup routine</h2>
+      <ol class="mini-steps mini-steps--large">
+        <li><span>1</span><div><strong>Download regularly</strong><p>Back up after meaningful cellar work or at least on a predictable schedule.</p></div></li>
+        <li><span>2</span><div><strong>Keep another copy</strong><p>Store it somewhere other than the machine running Mead Tracker.</p></div></li>
+        <li><span>3</span><div><strong>Retain dated versions</strong><p>Do not overwrite your only known-good backup with a new one.</p></div></li>
+      </ol>
+      <div class="callout">
+        <span aria-hidden="true">i</span>
+        <p>A backup is only proven when it can be restored. Test the restore procedure before the records become irreplaceable.</p>
+      </div>
+    </aside>
+  </div>
+{% endblock %}

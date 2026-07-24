@@ -1,0 +1,65 @@
+{% if form.non_field_errors %}
+  <div class="form-alert" role="alert">
+    <strong>Please check the form.</strong>
+    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+  </div>
+{% endif %}
+
+{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+
+<div class="form-grid">
+  {% for field in form.visible_fields %}
+    <div class="field field--{{ field.name }}{% if field.errors %} field--invalid{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field--checkbox{% endif %}">
+      {% if field.field.widget.input_type == "checkbox" %}
+        <div class="checkbox-row">
+          {{ field }}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {% if field.help_text %}
+            <button
+              class="help-trigger"
+              type="button"
+              aria-label="Help for {{ field.label }}"
+              aria-expanded="false"
+              aria-controls="{{ field.auto_id }}_helptext"
+              data-help-trigger
+            >?</button>
+            <span class="help-popover" id="{{ field.auto_id }}_helptext" role="tooltip" hidden data-help-popover>
+              {{ field.help_text|safe }}
+            </span>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="field__label-row">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+            {% if field.field.required %}<span class="required-mark" aria-hidden="true">*</span><span class="sr-only"> (required)</span>{% endif %}
+          </label>
+          {% if field.help_text %}
+            <button
+              class="help-trigger"
+              type="button"
+              aria-label="Help for {{ field.label }}"
+              aria-expanded="false"
+              aria-controls="{{ field.auto_id }}_helptext"
+              data-help-trigger
+            >?</button>
+          {% endif %}
+        </div>
+        {{ field }}
+        {% if field.help_text %}
+          <span class="help-popover" id="{{ field.auto_id }}_helptext" role="tooltip" hidden data-help-popover>
+            {{ field.help_text|safe }}
+          </span>
+        {% endif %}
+      {% endif %}
+
+      {% if field.errors %}
+        <div class="field__errors" id="{{ field.auto_id }}_error">
+          {% for error in field.errors %}
+            <p class="field__error">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

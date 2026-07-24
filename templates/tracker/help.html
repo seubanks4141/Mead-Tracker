@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Brewing help · Mead Tracker{% endblock %}
+{% block meta_description %}Practical references for measuring gravity and keeping useful mead batch records.{% endblock %}
+
+{% block content %}
+  <header class="help-hero">
+    <div>
+      <div class="eyebrow">Reference shelf</div>
+      <h1>A little help, right when you need it</h1>
+      <p class="lede">Quick explanations for the measurements and records used throughout Mead Tracker.</p>
+    </div>
+    <div class="help-hero__art" aria-hidden="true">
+      <span>?</span>
+    </div>
+  </header>
+
+  <div class="help-layout">
+    <aside class="help-toc">
+      <nav aria-label="Help topics">
+        <strong>On this page</strong>
+        <a href="#hydrometer">Using a hydrometer</a>
+        <a href="#specific-gravity">Specific gravity</a>
+        <a href="#reading-types">OG, routine, and FG</a>
+        <a href="#temperature">Sample temperature</a>
+        <a href="#abv">Estimated ABV</a>
+        <a href="#ingredients-units">Ingredients and units</a>
+        <a href="#sanitation">Sanitation reminders</a>
+        <a href="#labels-qr">Labels and QR codes</a>
+        <a href="#batch-marks">Reading batch marks</a>
+      </nav>
+    </aside>
+
+    <div class="help-content">
+      <section class="help-section" id="hydrometer" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">01</div>
+        <div>
+          <h2>Using a hydrometer</h2>
+          <p>A hydrometer estimates the density of your must or mead compared with water. A clean reading gives you a useful way to follow fermentation.</p>
+          <ol class="instruction-list">
+            <li>
+              <span>1</span>
+              <div><strong>Take a representative sample</strong><p>Use sanitized equipment and enough liquid for the hydrometer to float without touching the bottom.</p></div>
+            </li>
+            <li>
+              <span>2</span>
+              <div><strong>Release bubbles</strong><p>Lower the hydrometer gently and give it a small spin so clinging bubbles do not lift it.</p></div>
+            </li>
+            <li>
+              <span>3</span>
+              <div><strong>Read at eye level</strong><p>Once it settles, read the scale at the bottom of the liquid’s curved surface, unless your instrument says otherwise.</p></div>
+            </li>
+            <li>
+              <span>4</span>
+              <div><strong>Record time and temperature</strong><p>Log the displayed SG, when you measured it, and the sample temperature if known.</p></div>
+            </li>
+          </ol>
+          <div class="reference-link">
+            <span aria-hidden="true">↗</span>
+            <div>
+              <strong>Detailed external guide</strong>
+              <a href="https://www.homebrewersassociation.org/how-to-brew/how-to-take-an-accurate-hydrometer-reading/" target="_blank" rel="noopener noreferrer">
+                American Homebrewers Association: taking an accurate hydrometer reading
+                <span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="help-section" id="specific-gravity" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">02</div>
+        <div>
+          <h2>What specific gravity means</h2>
+          <p>Specific gravity (SG) compares a liquid’s density with water. Dissolved sugars usually make the starting must read above 1.000. As yeast consumes sugar, readings generally decrease.</p>
+          <div class="example-card">
+            <div><span>Example start</span><strong>1.105</strong></div>
+            <span aria-hidden="true">→</span>
+            <div><span>Example finish</span><strong>1.012</strong></div>
+            <p>These numbers are examples only; a healthy range depends on the recipe, yeast, conditions, and intended sweetness.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="help-section" id="reading-types" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">03</div>
+        <div>
+          <h2>OG, routine, and FG readings</h2>
+          <dl class="term-list">
+            <div>
+              <dt>Original gravity (OG)</dt>
+              <dd>The starting measurement, normally taken after ingredients are thoroughly mixed and before active fermentation changes the density.</dd>
+            </div>
+            <div>
+              <dt>Routine reading</dt>
+              <dd>Any measurement used to watch the fermentation trend. Several similar readings can help show that gravity has stabilized.</dd>
+            </div>
+            <div>
+              <dt>Final gravity (FG)</dt>
+              <dd>The reading you designate as final for recordkeeping and estimated ABV. “Final” should reflect your process, not a prediction from the software.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="help-section" id="temperature" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">04</div>
+        <div>
+          <h2>Sample temperature</h2>
+          <p>Hydrometers are calibrated for a stated temperature, often printed on the instrument or its instructions. A sample far from that temperature can shift the reading. Record the actual sample temperature so you can apply the appropriate correction later.</p>
+          <div class="callout callout--caution">
+            <span aria-hidden="true">△</span>
+            <p>Use the correction information supplied for your hydrometer. Mead Tracker stores your measurement; it does not assume every instrument has the same calibration.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="help-section" id="abv" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">05</div>
+        <div>
+          <h2>Estimated alcohol by volume</h2>
+          <p>Mead Tracker can estimate alcohol by volume from the readings marked original and final. It is an approximation, not a laboratory measurement, and is only as reliable as the entered readings.</p>
+          <div class="formula-card" aria-label="Common estimated alcohol by volume formula">
+            <span>( OG − FG )</span>
+            <span aria-hidden="true">×</span>
+            <span>131.25</span>
+            <span aria-hidden="true">≈</span>
+            <strong>ABV %</strong>
+          </div>
+          <p class="muted-copy">Recipes involving later sugar, honey, or fruit additions may require a more complete calculation than a simple OG/FG estimate.</p>
+        </div>
+      </section>
+
+      <section class="help-section" id="ingredients-units" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">06</div>
+        <div>
+          <h2>Ingredients and units</h2>
+          <p>Record ingredients as separate additions at the time they were used. This preserves staggered nutrients, secondary fruit, backsweetening honey, and spice adjustments in the correct order.</p>
+          <ul class="check-list">
+            <li><span aria-hidden="true">✓</span>Enter the number shown by the measuring tool.</li>
+            <li><span aria-hidden="true">✓</span>Choose a unit of the correct kind: weight, volume, or count.</li>
+            <li><span aria-hidden="true">✓</span>Use notes for preparation details such as frozen, toasted, split, or rehydrated.</li>
+            <li><span aria-hidden="true">✓</span>Create another addition when an ingredient goes in at a later time.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="help-section" id="sanitation" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">07</div>
+        <div>
+          <h2>Sanitation reminders</h2>
+          <p>This tracker helps with records, but it cannot verify that a process is safe. Clean and sanitize equipment that contacts the mead, follow the product instructions for your sanitizer, and avoid returning a test sample to the fermenter.</p>
+          <div class="callout">
+            <span aria-hidden="true">i</span>
+            <p>If a batch’s appearance, smell, pressure, or behavior raises a safety concern, seek experienced, qualified guidance rather than relying on software alone.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="help-section" id="labels-qr" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">08</div>
+        <div>
+          <h2>Labels and QR codes</h2>
+          <p>The QR code is a shortcut to the batch’s phone-friendly update page. Before labeling bottles or a vessel:</p>
+          <ol class="plain-steps">
+            <li>Make sure the configured site address is reachable from your phone and is not <code>localhost</code>.</li>
+            <li>Print one test at “Actual size” or 100% scaling.</li>
+            <li>Scan the physical print in ordinary lighting.</li>
+            <li>Sign in and submit a harmless test observation, then remove it if desired.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="help-section" id="batch-marks" tabindex="-1">
+        <div class="help-section__number" aria-hidden="true">09</div>
+        <div>
+          <h2>Reading a batch visual mark</h2>
+          <p>Each batch gets a small emblem that makes it easier to recognize at a glance. The center is its stable recipe identity; the outer treatment summarizes the currently recorded or estimated production stage. It is not a quality, readiness, or safety score.</p>
+
+          <div class="mark-guide">
+            <figure class="mark-guide__preview">
+              <div
+                class="batch-mark batch-mark--guide batch-mark--shape-hex batch-mark--status-fermenting batch-mark--ring-gravity"
+                style="--mark-rotation: -7deg; --mark-scale: 1; --mark-color-start: #e58b83; --mark-color-end: #8b4513; --mark-glow: #f2c15d; --stage-progress: 68%;"
+                role="group"
+                aria-label="Example batch identity with fruit, honey, and yeast ingredient categories"
+              >
+                <span class="batch-mark__glow" aria-hidden="true"></span>
+                <span
+                  class="batch-mark__stage-ring"
+                  role="meter"
+                  aria-label="Fermenting estimate"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="68"
+                  aria-valuetext="Progress toward target specific gravity, about 68 percent"
+                ></span>
+                <span class="batch-mark__stage-orbit" aria-hidden="true"></span>
+                <span class="batch-mark__stage-badge" aria-hidden="true"></span>
+                <span class="batch-mark__body" aria-hidden="true">
+                  <span class="batch-mark__shine"></span>
+                  <span class="batch-mark__core"></span>
+                </span>
+                <span class="batch-mark__ingredients" aria-hidden="true">
+                  <span class="batch-mark__ingredient batch-mark__ingredient--honey"></span>
+                  <span class="batch-mark__ingredient batch-mark__ingredient--fruit"></span>
+                  <span class="batch-mark__ingredient batch-mark__ingredient--yeast"></span>
+                </span>
+              </div>
+              <figcaption>Example: progress toward a target gravity</figcaption>
+            </figure>
+
+            <dl class="mark-guide__legend">
+              <div>
+                <dt><span class="mark-key mark-key--color" aria-hidden="true"></span>Stable center</dt>
+                <dd>The center shape and colors identify this batch. Colors draw from active ingredient categories such as honey, fruit, water, spices, and nutrients.</dd>
+              </div>
+              <div>
+                <dt><span class="mark-key mark-key--dots" aria-hidden="true"><i></i><i></i><i></i></span>Small dots</dt>
+                <dd>The dots are a compact reminder of ingredient categories represented in the current recipe record.</dd>
+              </div>
+              <div>
+                <dt><span class="mark-key mark-key--shape" aria-hidden="true"></span>Identity, not stage</dt>
+                <dd>The center remains recognizable while the outside changes. A stage update does not turn the batch into a different visual identity.</dd>
+              </div>
+              <div>
+                <dt><span class="mark-key mark-key--ring" aria-hidden="true"></span>Outer ring</dt>
+                <dd>Pattern, openness, and badges communicate how the current stage was recorded or estimated. A ring is never a universal aging clock.</dd>
+              </div>
+            </dl>
+          </div>
+
+          <ul class="stage-guide" aria-label="Stage mark meanings">
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--unknown" aria-hidden="true">?</span>
+              <p><strong>Unknown.</strong> A dotted ring and question mark mean there is not enough usable information for a numeric estimate.</p>
+            </li>
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--gravity" aria-hidden="true"></span>
+              <p><strong>Fermenting, gravity based.</strong> A solid arc uses recorded original, latest, and target gravity values. It is an estimate and does not prove fermentation is finished.</p>
+            </li>
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--trend" aria-hidden="true">≈</span>
+              <p><strong>Optional time window.</strong> When enough recent readings form a useful trend, the gravity-based view may add a broad timing forecast beside the solid progress ring. Otherwise no time forecast is shown.</p>
+            </li>
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--planned" aria-hidden="true">◔</span>
+              <p><strong>Conditioning plan.</strong> A segmented treatment can show progress through a conditioning window you entered. That plan is not a chemical measurement.</p>
+            </li>
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--aging" aria-hidden="true"></span>
+              <p><strong>Aging.</strong> There is no outer progress ring. The stable center remains, accompanied by plain elapsed-stage text on the batch record. There is no percentage and no universal finish line.</p>
+            </li>
+            <li>
+              <span class="stage-guide__symbol stage-guide__symbol--complete" aria-hidden="true">✓</span>
+              <p><strong>Bottled or complete.</strong> A seal or check reflects the status you explicitly recorded; it is not calculated from elapsed time.</p>
+            </li>
+          </ul>
+
+          <div class="mark-guide__notes">
+            <div class="callout">
+              <span aria-hidden="true">↔</span>
+              <p><strong>One identity in two places.</strong> The same generated icon appears on the dashboard card and at the top of the batch detail page.</p>
+            </div>
+            <div class="callout callout--quiet">
+              <span aria-hidden="true">✓</span>
+              <p><strong>Trash does not change the recipe signal.</strong> Deleted ingredient entries are ignored when the colors and category dots are generated.</p>
+            </div>
+            <div class="callout mark-guide__limit">
+              <span aria-hidden="true">#</span>
+              <p><strong>Amounts are not encoded.</strong> The mark does not show quantities, weights, or recipe proportions. Open the batch record for exact ingredient amounts.</p>
+            </div>
+            <div class="callout callout--caution mark-guide__limit">
+              <span aria-hidden="true">!</span>
+              <p><strong>Check the batch, not just the mark.</strong> The emblem cannot tell you that fermentation is finished, that pressure is stable, or that a batch is safe to bottle. Use appropriate readings and your brewing process to make those decisions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="help-footer">
+        <div>
+          <h2>Still recording a batch?</h2>
+          <p>Return to the dashboard and open it for readings, ingredients, and notes.</p>
+        </div>
+        <a class="button button--primary" href="{% url 'tracker:dashboard' %}">Back to batches</a>
+      </footer>
+    </div>
+  </div>
+{% endblock %}

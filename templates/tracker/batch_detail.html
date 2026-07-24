@@ -1,0 +1,569 @@
+{% extends "base.html" %}
+
+{% block title %}{{ batch.name }} · Mead Tracker{% endblock %}
+{% block meta_description %}Batch record for {{ batch.name }}: ingredients, gravity readings, observations, and labels.{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li aria-current="page">{{ batch.name }}</li>
+    </ol>
+  </nav>
+
+  <header class="batch-hero">
+    <div class="batch-hero__identity">
+      {% with mark=batch.visual_mark %}
+        {% include "tracker/includes/visual_mark.html" with batch=batch mark=mark mark_size="hero" %}
+      {% endwith %}
+      <div>
+        <div class="batch-hero__meta">
+          {% include "tracker/includes/batch_status.html" %}
+          {% if batch.batch_number %}<span>Batch #{{ batch.batch_number }}</span>{% endif %}
+        </div>
+        <h1>{{ batch.name|default:"Unnamed mead" }}</h1>
+        <p>
+          {% if batch.style %}{{ batch.style }} <span aria-hidden="true">·</span>{% endif %}
+          Started
+          {% if batch.start_date %}{{ batch.start_date|date:"F j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"F j, Y" }}{% else %}date not set{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="batch-hero__actions">
+      <a class="button button--secondary" href="{% url 'tracker:label' batch.pk %}">
+        <span aria-hidden="true">▧</span> Label
+      </a>
+      <a class="button button--ghost" href="{% url 'tracker:batch_edit' batch.pk %}">
+        <span aria-hidden="true">✎</span> Edit batch
+      </a>
+      <details class="action-menu">
+        <summary class="button button--icon" aria-label="More batch actions">•••</summary>
+        <div class="action-menu__panel">
+          <a href="{% url 'tracker:batch_export' batch.pk %}">Export batch data</a>
+          <a href="{% url 'tracker:batch_trash' batch.pk %}">Recently removed</a>
+          <a href="{% url 'tracker:help' %}">Open brewing help</a>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <nav class="section-tabs" aria-label="Batch sections">
+    <a href="#overview">Overview</a>
+    <a href="#stage">Stage</a>
+    <a href="#gravity">Gravity</a>
+    <a href="#ingredients">Ingredients</a>
+    <a href="#journal">Journal</a>
+    <a href="#timeline">Timeline</a>
+  </nav>
+
+  <section class="batch-summary" id="overview" aria-label="Batch overview">
+    <article class="summary-card summary-card--gravity">
+      <div class="summary-card__heading">
+        <span>Latest gravity</span>
+        <span class="summary-card__icon" aria-hidden="true">↘</span>
+      </div>
+      <strong>{% if latest_gravity %}{{ latest_gravity.specific_gravity }}{% else %}—{% endif %}</strong>
+      <small>
+        {% if latest_gravity %}Measured {{ latest_gravity.measured_at|timesince }} ago{% elif gravity_readings %}Most recent reading{% else %}No readings yet{% endif %}
+      </small>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-card__heading">
+        <span>Estimated ABV</span>
+        <a class="inline-help" href="{% url 'tracker:help' %}#abv" aria-label="Learn about estimated alcohol by volume">?</a>
+      </div>
+      <strong>{% if estimated_abv != None %}{{ estimated_abv|floatformat:1 }}<span>%</span>{% else %}—{% endif %}</strong>
+      <small>
+        {% if estimated_abv != None %}
+          {% if estimated_abv_is_final %}Based on selected OG and FG{% else %}Based on OG and the latest reading{% endif %}
+        {% else %}
+          Needs an original gravity and a later reading
+        {% endif %}
+      </small>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-card__heading">
+        <span>Batch volume</span>
+        <span class="summary-card__icon" aria-hidden="true">◒</span>
+      </div>
+      <strong>
+        {% if batch.volume %}{{ batch.volume }}{% elif batch.volume_value %}{{ batch.volume_value }}{% else %}—{% endif %}
+        {% if batch.volume or batch.volume_value %}<span>{{ batch.volume_unit }}</span>{% endif %}
+      </strong>
+      <small>{{ batch.vessel|default:"Vessel not recorded" }}</small>
+    </article>
+
+    <article class="summary-card">
+      <div class="summary-card__heading">
+        <span>Stage</span>
+        <span class="summary-card__icon" aria-hidden="true">◷</span>
+      </div>
+      <strong>{{ batch.stage_visual.stage_label|default:batch.get_status_display|default:"Not set" }}</strong>
+      <small>{{ batch.stage_visual.elapsed_label|default:batch.stage_visual.summary|default:"Timing not available" }}</small>
+    </article>
+  </section>
+
+  {% with stage=batch.stage_visual %}
+    <section
+      class="stage-panel stage-panel--{{ stage.ring_mode|default:'unknown'|slugify }}"
+      id="stage"
+      aria-labelledby="stage-heading"
+    >
+      <div class="stage-panel__overview">
+        <div>
+          <div class="eyebrow">Current production stage</div>
+          <div class="stage-panel__title-row">
+            <h2 id="stage-heading">{{ stage.stage_label|default:batch.get_status_display|default:"Stage not set" }}</h2>
+            {% if stage.confidence %}
+              <span class="stage-confidence stage-confidence--{{ stage.confidence|slugify }}">
+                {% if stage.ring_mode == "planned" %}
+                  User-planned
+                {% elif stage.ring_mode == "complete" %}
+                  Recorded status
+                {% elif stage.confidence == "unavailable" %}
+                  Estimate unavailable
+                {% elif stage.confidence == "limited" %}
+                  Limited confidence
+                {% elif stage.confidence == "trend" %}
+                  Trend-supported
+                {% else %}
+                  {{ stage.confidence|title }} confidence
+                {% endif %}
+              </span>
+            {% endif %}
+          </div>
+          <p class="stage-panel__summary">{{ stage.summary|default:"Add a reading or update the batch status to build a stage summary." }}</p>
+          {% if stage.elapsed_label %}<p class="stage-panel__elapsed">{{ stage.elapsed_label }}</p>{% endif %}
+        </div>
+
+        {% if stage.progress != None and stage.ring_mode != "none" and stage.ring_mode != "unknown" and stage.ring_mode != "complete" %}
+          <div class="stage-progress{% if stage.ring_mode == 'gravity' and stage.progress >= 100 %} stage-progress--target-reached{% endif %}">
+            <div class="stage-progress__labels">
+              <span>
+                {% if stage.ring_mode == "gravity" and stage.progress >= 100 %}
+                  Target SG reached in latest reading
+                {% elif stage.ring_mode == "gravity" %}
+                  Progress toward target SG
+                {% elif stage.ring_mode == "forecast" %}
+                  Estimated schedule
+                {% else %}
+                  Planned window
+                {% endif %}
+              </span>
+              <strong>
+                {% if stage.ring_mode == "gravity" and stage.progress >= 100 %}
+                  Verify stability
+                {% else %}
+                  {% if stage.ring_mode == "planned" %}Planned{% else %}Approx.{% endif %}
+                  {{ stage.progress|floatformat:"0" }}%
+                {% endif %}
+              </strong>
+            </div>
+            <div
+              class="stage-progress__track stage-progress__track--{{ stage.ring_mode|slugify }}"
+              role="meter"
+              aria-label="{{ stage.stage_label|default:'Stage' }}"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="{{ stage.progress|floatformat:'0' }}"
+              aria-valuetext="{% if stage.ring_mode == 'gravity' and stage.progress >= 100 %}Target specific gravity reached in the latest reading; verify stability before changing status{% else %}{{ stage.accessible_summary|default:stage.summary|default:'Stage estimate' }}{% endif %}"
+              style="--stage-progress: {% if stage.ring_mode == 'gravity' and stage.progress >= 100 %}96{% else %}{{ stage.progress|floatformat:'0' }}{% endif %}%;"
+            >
+              <span aria-hidden="true"></span>
+            </div>
+            {% if stage.forecast_label %}<p>{{ stage.forecast_label }}</p>{% endif %}
+          </div>
+        {% else %}
+          <div class="stage-panel__state" aria-label="{{ stage.accessible_summary|default:stage.summary }}">
+            <span aria-hidden="true">
+              {% if stage.status == "complete" %}&#10003;{% elif stage.status == "bottled" %}&#10022;{% elif stage.ring_mode == "unknown" %}?{% else %}&#9711;{% endif %}
+            </span>
+            <strong>
+              {% if stage.status == "complete" or stage.status == "bottled" %}
+                Status recorded
+              {% elif stage.ring_mode == "unknown" %}
+                No numeric estimate
+              {% else %}
+                Open-ended stage
+              {% endif %}
+            </strong>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="stage-panel__explanation{% if not stage.prompts %} stage-panel__explanation--single{% endif %}">
+        <div class="stage-panel__why">
+          <h3>{% if stage.ring_mode == "none" or stage.ring_mode == "complete" %}Why this stage?{% else %}Why this estimate?{% endif %}</h3>
+          <p>{{ stage.basis|default:"This view uses the batch status and the information recorded so far." }}</p>
+          {% if stage.details %}
+            <ul>
+              {% for detail in stage.details %}<li>{{ detail }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+          {% if stage.original_sg != None or stage.latest_sg != None or stage.target_sg != None %}
+            <dl class="stage-readings">
+              <div>
+                <dt>Original SG</dt>
+                <dd>{% if stage.original_sg != None %}{{ stage.original_sg }}{% else %}Not recorded{% endif %}</dd>
+              </div>
+              <div>
+                <dt>Latest SG</dt>
+                <dd>{% if stage.latest_sg != None %}{{ stage.latest_sg }}{% else %}Not recorded{% endif %}</dd>
+              </div>
+              <div>
+                <dt>Target SG</dt>
+                <dd>{% if stage.target_sg != None %}{{ stage.target_sg }}{% else %}Not set{% endif %}</dd>
+              </div>
+            </dl>
+          {% endif %}
+        </div>
+
+        {% if stage.prompts %}
+          <div class="stage-panel__prompts">
+            <h3>Improve this view</h3>
+            <ul>
+              {% for prompt in stage.prompts %}
+                <li>
+                  <span>{{ prompt.message|default:prompt }}</span>
+                  {% if prompt.code == "set_target" %}
+                    <a href="{% url 'tracker:batch_edit' batch.pk %}">Set target</a>
+                  {% elif prompt.code == "add_original" %}
+                    <a href="{% url 'tracker:gravity_add' batch.pk %}">Add original gravity</a>
+                  {% elif prompt.code == "add_reading" %}
+                    <a href="{% url 'tracker:gravity_add' batch.pk %}">Add reading</a>
+                  {% elif prompt.code == "review_status" %}
+                    <a href="{% url 'tracker:status_update' batch.pk %}">Review status</a>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+      <p class="stage-panel__disclaimer">
+        Stage visuals summarize recorded data and plans. They do not establish that fermentation is finished or that a batch is safe to bottle.
+      </p>
+    </section>
+  {% endwith %}
+
+  <div class="batch-working-grid">
+    <div class="batch-working-main">
+      <section class="record-section" id="gravity" aria-labelledby="gravity-heading">
+        <div class="record-section__heading">
+          <div>
+            <div class="eyebrow">Fermentation</div>
+            <h2 id="gravity-heading">Specific gravity</h2>
+            <p>Readings over time show how fermentation is progressing.</p>
+          </div>
+          <a class="button button--small button--primary" href="{% url 'tracker:gravity_add' batch.pk %}">
+            <span aria-hidden="true">＋</span> Add reading
+          </a>
+        </div>
+
+        {% if gravity_readings %}
+          <div class="gravity-chart-wrap">
+            <canvas
+              class="gravity-chart"
+              width="900"
+              height="310"
+              role="img"
+              aria-label="Line chart of specific gravity readings over time. Exact values are in the table below."
+              data-gravity-chart
+            ></canvas>
+            {{ chart|json_script:"gravity-chart-data" }}
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <caption class="sr-only">Specific gravity readings for {{ batch.name }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Measured</th>
+                  <th scope="col">SG</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Temperature</th>
+                  <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for reading in gravity_readings %}
+                  <tr>
+                    <td>
+                      <time datetime="{{ reading.measured_at|date:'c' }}">
+                        {{ reading.measured_at|date:"M j, Y" }}
+                        <small>{{ reading.measured_at|date:"g:i A" }}</small>
+                      </time>
+                    </td>
+                    <td class="data-table__number">{{ reading.specific_gravity }}</td>
+                    <td>{{ reading.get_reading_type_display|default:reading.reading_type|default:"Routine"|title }}</td>
+                    <td>
+                      {% if reading.sample_temperature != None %}
+                        {{ reading.sample_temperature }}°{{ reading.temperature_unit|default:"F" }}
+                      {% else %}—{% endif %}
+                    </td>
+                    <td>
+                      <details class="row-menu">
+                        <summary aria-label="Actions for gravity reading on {{ reading.measured_at|date:'M j, Y' }}">•••</summary>
+                        <div>
+                          <a href="{% url 'tracker:gravity_edit' reading.pk %}">Edit</a>
+                          <a class="danger-link" href="{% url 'tracker:entry_delete' kind='gravity' pk=reading.pk %}">Move to trash</a>
+                        </div>
+                      </details>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="section-empty">
+            <span aria-hidden="true">↘</span>
+            <div>
+              <h3>No gravity readings yet</h3>
+              <p>Add original gravity now, or record the next measurement when you take it.</p>
+            </div>
+            <a href="{% url 'tracker:gravity_add' batch.pk %}">Record gravity <span aria-hidden="true">→</span></a>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="record-section" id="ingredients" aria-labelledby="ingredients-heading">
+        <div class="record-section__heading">
+          <div>
+            <div class="eyebrow">Recipe log</div>
+            <h2 id="ingredients-heading">Ingredients & additions</h2>
+            <p>Every addition stays connected to when and why it went in.</p>
+          </div>
+          <a class="button button--small button--secondary" href="{% url 'tracker:addition_add' batch.pk %}">
+            <span aria-hidden="true">＋</span> Add ingredient
+          </a>
+        </div>
+
+        {% if additions %}
+          <ul class="addition-list">
+            {% for addition in additions %}
+              <li class="addition-item">
+                <span class="addition-item__icon addition-item__icon--{{ addition.kind|default:'other'|slugify }}" aria-hidden="true">
+                  {% if addition.kind == "honey" %}⬡{% elif addition.kind == "water" %}◉{% elif addition.kind == "fruit" %}●{% elif addition.kind == "spice" %}✣{% else %}+{% endif %}
+                </span>
+                <div class="addition-item__body">
+                  <div>
+                    <h3>{{ addition.name }}</h3>
+                    <p>
+                      {{ addition.get_kind_display }}
+                      {% if addition.phase %}<span aria-hidden="true">·</span> {{ addition.get_phase_display }}{% endif %}
+                    </p>
+                  </div>
+                  <strong>{{ addition.quantity }} {{ addition.display_unit }}</strong>
+                  <time datetime="{{ addition.added_at|date:'c' }}">
+                    {{ addition.added_at|date:"M j, Y" }}
+                    <small>{{ addition.added_at|date:"g:i A" }}</small>
+                  </time>
+                  <details class="row-menu">
+                    <summary aria-label="Actions for {{ addition.name|default:'ingredient' }}">•••</summary>
+                    <div>
+                      <a href="{% url 'tracker:addition_edit' addition.pk %}">Edit</a>
+                      <a class="danger-link" href="{% url 'tracker:entry_delete' kind='addition' pk=addition.pk %}">Move to trash</a>
+                    </div>
+                  </details>
+                  {% if addition.notes %}<p class="addition-item__notes">{{ addition.notes }}</p>{% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="section-empty">
+            <span aria-hidden="true">＋</span>
+            <div>
+              <h3>The recipe log is empty</h3>
+              <p>Start with honey and water, then add yeast, fruit, nutrients, spices, and later additions.</p>
+            </div>
+            <a href="{% url 'tracker:addition_add' batch.pk %}">Add first ingredient <span aria-hidden="true">→</span></a>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="record-section" id="journal" aria-labelledby="journal-heading">
+        <div class="record-section__heading">
+          <div>
+            <div class="eyebrow">Batch journal</div>
+            <h2 id="journal-heading">Observations</h2>
+            <p>A running record of aromas, flavors, appearance, and decisions.</p>
+          </div>
+          <a class="button button--small button--secondary" href="{% url 'tracker:observation_add' batch.pk %}">
+            <span aria-hidden="true">＋</span> Add note
+          </a>
+        </div>
+
+        {% if observations %}
+          <ol class="journal-list">
+            {% for observation in observations %}
+              <li class="journal-entry">
+                <div class="journal-entry__rail">
+                  <span aria-hidden="true"></span>
+                </div>
+                <article>
+                  <header>
+                    <div>
+                      {% if observation.category %}
+                        <span class="category-tag">{{ observation.get_category_display|default:observation.category|title }}</span>
+                      {% endif %}
+                      <time datetime="{{ observation.observed_at|date:'c' }}">
+                        {{ observation.observed_at|date:"F j, Y" }} at {{ observation.observed_at|date:"g:i A" }}
+                      </time>
+                    </div>
+                    <details class="row-menu">
+                      <summary aria-label="Actions for observation on {{ observation.observed_at|date:'M j, Y' }}">•••</summary>
+                      <div>
+                        <a href="{% url 'tracker:observation_edit' observation.pk %}">Edit</a>
+                        <a class="danger-link" href="{% url 'tracker:entry_delete' kind='observation' pk=observation.pk %}">Move to trash</a>
+                      </div>
+                    </details>
+                  </header>
+                  <div class="prose">{{ observation.text|linebreaks }}</div>
+                  {% if observation.updated_at and observation.updated_at != observation.created_at %}
+                    <small class="edited-note">Edited {{ observation.updated_at|date:"M j, Y, g:i A" }}</small>
+                  {% endif %}
+                </article>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <div class="section-empty">
+            <span aria-hidden="true">✎</span>
+            <div>
+              <h3>No observations yet</h3>
+              <p>Record what you see, smell, taste, or decide while it is still fresh.</p>
+            </div>
+            <a href="{% url 'tracker:observation_add' batch.pk %}">Add a note <span aria-hidden="true">→</span></a>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="record-section" id="timeline" aria-labelledby="timeline-heading">
+        <div class="record-section__heading">
+          <div>
+            <div class="eyebrow">Full record</div>
+            <h2 id="timeline-heading">Batch timeline</h2>
+            <p>All important events in chronological order.</p>
+          </div>
+        </div>
+        {% if activity %}
+          <ol class="batch-timeline">
+            {% for item in activity %}
+              <li>
+                <time datetime="{{ item.timestamp|date:'c' }}">
+                  <span>{{ item.timestamp|date:"M j" }}</span>
+                  <small>{{ item.timestamp|date:"Y" }}</small>
+                </time>
+                <span class="batch-timeline__marker batch-timeline__marker--{{ item.kind|slugify }}" aria-hidden="true"></span>
+                <div>
+                  <strong>{% if item.title %}{{ item.title }}{% else %}{{ item.kind|title }}{% endif %}</strong>
+                  {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
+                  <small>{{ item.timestamp|date:"g:i A" }}</small>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="muted-copy">The timeline fills in as you add readings, ingredients, notes, and status changes.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="batch-sidebar">
+      <section class="side-card side-card--quick" aria-labelledby="quick-update-heading">
+        <div class="side-card__heading">
+          <span class="side-card__icon" aria-hidden="true">＋</span>
+          <div>
+            <h2 id="quick-update-heading">Quick update</h2>
+            <p>What happened in the cellar?</p>
+          </div>
+        </div>
+        <div class="quick-links">
+          <a href="{% url 'tracker:gravity_add' batch.pk %}">
+            <span aria-hidden="true">↘</span>
+            <span><strong>Gravity reading</strong><small>Log SG and temperature</small></span>
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="{% url 'tracker:observation_add' batch.pk %}">
+            <span aria-hidden="true">✎</span>
+            <span><strong>Observation</strong><small>Add a cellar note</small></span>
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="{% url 'tracker:addition_add' batch.pk %}">
+            <span aria-hidden="true">＋</span>
+            <span><strong>Ingredient</strong><small>Record an addition</small></span>
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="{% url 'tracker:status_update' batch.pk %}">
+            <span aria-hidden="true">✓</span>
+            <span><strong>Change status</strong><small>Move to the next stage</small></span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="side-card" aria-labelledby="details-heading">
+        <div class="side-card__title-row">
+          <h2 id="details-heading">Batch details</h2>
+          <a href="{% url 'tracker:batch_edit' batch.pk %}">Edit</a>
+        </div>
+        <dl class="detail-list">
+          <div>
+            <dt>Style</dt>
+            <dd>{{ batch.style|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt>Vessel</dt>
+            <dd>{{ batch.vessel|default:"—" }}</dd>
+          </div>
+          <div>
+            <dt>Yeast</dt>
+            <dd>{{ batch.yeast|default:"See ingredients" }}</dd>
+          </div>
+          <div>
+            <dt>Started</dt>
+            <dd>
+              {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}—{% endif %}
+            </dd>
+          </div>
+        </dl>
+        {% if batch.description %}
+          <div class="side-card__description">
+            <strong>Description</strong>
+            <p>{{ batch.description|linebreaksbr }}</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="side-card side-card--qr" aria-labelledby="qr-heading">
+        <div class="side-card__title-row">
+          <div>
+            <div class="eyebrow">Phone access</div>
+            <h2 id="qr-heading">Scan to update</h2>
+          </div>
+        </div>
+        <div class="qr-preview">
+          <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="QR code for {{ batch.name }}" width="180" height="180">
+        </div>
+        <p>Put this code on the vessel or bottle for a mobile-friendly shortcut.</p>
+        <a class="button button--secondary button--wide" href="{% url 'tracker:label' batch.pk %}">Create a label</a>
+      </section>
+
+      <section class="side-card side-card--future" aria-labelledby="assistant-heading">
+        <span class="future-tag">Planned update</span>
+        <h2 id="assistant-heading"><span aria-hidden="true">✦</span> Mead assistant</h2>
+        <p>Ask questions using this batch’s recipe, readings, and journal as context.</p>
+        <button class="button button--ghost button--wide" type="button" disabled>Coming later</button>
+      </section>
+    </aside>
+  </div>
+
+  <nav class="mobile-action-dock" aria-label="Quick batch updates">
+    <a href="{% url 'tracker:gravity_add' batch.pk %}"><span aria-hidden="true">↘</span>Gravity</a>
+    <a href="{% url 'tracker:observation_add' batch.pk %}"><span aria-hidden="true">✎</span>Note</a>
+    <a href="{% url 'tracker:addition_add' batch.pk %}"><span aria-hidden="true">＋</span>Addition</a>
+  </nav>
+{% endblock %}

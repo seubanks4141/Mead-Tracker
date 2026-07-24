@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title|default:"Create user" }} · Mead Tracker{% endblock %}
+{% block meta_description %}Create a Mead Tracker account for another user.{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li><a href="{% url 'tracker:user_list' %}">Users</a></li>
+      <li aria-current="page">Create user</li>
+    </ol>
+  </nav>
+
+  <header class="page-heading page-heading--form">
+    <div>
+      <div class="eyebrow">Administration</div>
+      <h1>{{ title|default:"Create a user account" }}</h1>
+      <p class="lede">Give someone a separate, private workspace for their own mead records.</p>
+    </div>
+  </header>
+
+  <form method="post" class="editor-layout user-editor-layout" novalidate>
+    {% csrf_token %}
+    <section class="form-card" aria-labelledby="user-fields-heading">
+      <div class="form-card__heading">
+        <span class="form-card__step form-card__step--symbol" aria-hidden="true">◎</span>
+        <div>
+          <h2 id="user-fields-heading">Account details</h2>
+          <p>Fields marked <span class="required-mark">*</span> are required.</p>
+        </div>
+      </div>
+
+      {% include "tracker/includes/form_fields.html" %}
+
+      <div class="form-actions">
+        <a class="button button--ghost" href="{% url 'tracker:user_list' %}">Cancel</a>
+        <button class="button button--primary" type="submit">{{ submit_label|default:"Create user" }}</button>
+      </div>
+    </section>
+
+    <aside class="editor-aside">
+      <div class="tip-card">
+        <span class="tip-card__icon" aria-hidden="true">◇</span>
+        <h2>Separate records by owner</h2>
+        <p>Every batch created by this person belongs to their account. Regular users see only their own production records.</p>
+      </div>
+      <div class="tip-card tip-card--muted">
+        <h2>Access can be paused later</h2>
+        <p>Deactivation blocks sign-in without deleting the account or any associated batch history.</p>
+      </div>
+    </aside>
+  </form>
+{% endblock %}

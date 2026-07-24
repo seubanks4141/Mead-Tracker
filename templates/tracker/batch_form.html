@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{% if batch.pk %}Edit {{ batch.name }}{% else %}Start a batch{% endif %} · Mead Tracker{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      {% if batch.pk %}
+        <li><a href="{% url 'tracker:batch_detail' batch.pk %}">{{ batch.name }}</a></li>
+        <li aria-current="page">Edit details</li>
+      {% else %}
+        <li aria-current="page">New batch</li>
+      {% endif %}
+    </ol>
+  </nav>
+
+  <header class="page-heading page-heading--form">
+    <div>
+      <div class="eyebrow">{% if batch.pk %}Batch details{% else %}New recipe{% endif %}</div>
+      <h1>{% if batch.pk %}Edit {{ batch.name }}{% else %}Start a new batch{% endif %}</h1>
+      <p class="lede">
+        {% if batch.pk %}
+          Keep the identity and starting details for this batch accurate.
+        {% else %}
+          Begin with what you know. You can add readings, ingredients, and observations next.
+        {% endif %}
+      </p>
+    </div>
+  </header>
+
+  <form method="post" enctype="multipart/form-data" class="editor-layout" novalidate>
+    {% csrf_token %}
+    <section class="form-card" aria-labelledby="batch-fields-heading">
+      <div class="form-card__heading">
+        <span class="form-card__step" aria-hidden="true">01</span>
+        <div>
+          <h2 id="batch-fields-heading">Batch information</h2>
+          <p>Fields marked <span class="required-mark">*</span> are required.</p>
+        </div>
+      </div>
+
+      {% include "tracker/includes/form_fields.html" %}
+
+      <div class="form-actions">
+        {% if batch.pk %}
+          <a class="button button--ghost" href="{% url 'tracker:batch_detail' batch.pk %}">Cancel</a>
+          <button class="button button--primary" type="submit">Save changes</button>
+        {% else %}
+          <a class="button button--ghost" href="{% url 'tracker:dashboard' %}">Cancel</a>
+          <button class="button button--primary" type="submit">Create batch</button>
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="editor-aside">
+      <div class="tip-card">
+        <span class="tip-card__icon" aria-hidden="true">✦</span>
+        <h2>A useful batch name</h2>
+        <p>Choose something short enough for a label and distinctive enough to find next year.</p>
+        <p class="tip-card__example">Example: <strong>Summer Orange Blossom</strong></p>
+      </div>
+      <div class="tip-card tip-card--muted">
+        <h2>What comes next?</h2>
+        <ol class="mini-steps">
+          <li><span>1</span>Add your honey, water, yeast, and other ingredients.</li>
+          <li><span>2</span>Record original gravity and when it was measured.</li>
+          <li><span>3</span>Print a scannable bottle or vessel label.</li>
+        </ol>
+        <p class="tip-card__example">
+          <strong>Stage guidance:</strong> Target SG and a planned conditioning window improve the visual estimate, but never change status automatically or confirm readiness.
+        </p>
+      </div>
+    </aside>
+  </form>
+{% endblock %}

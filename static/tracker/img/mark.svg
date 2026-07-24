@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Mead Tracker">
+  <defs>
+    <linearGradient id="amber" x1="7" y1="4" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0c87d"/>
+      <stop offset=".52" stop-color="#cf8628"/>
+      <stop offset="1" stop-color="#914f0c"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="16" y1="10" x2="29" y2="35" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#amber)" stroke="#f3d79f" stroke-opacity=".42" d="M25.3 3.2c2.2 6.5 11.9 14.4 15.2 22.3 4.2 10.1-3.8 19.2-14.6 19.2-10.3 0-18.2-8.3-15-18.2 2.8-8.6 11.3-15.1 14.4-23.3Z"/>
+  <path fill="url(#shine)" d="M23.1 10.3c-1.4 4.1-7.6 10-8.5 17.2-.6 4.8 1.8 8.7 5.1 10.7-1.8-4.8-1.7-9.4.6-14.7 1.4-3.4 3.5-6.5 4.6-9.2.8-2 .3-4.7-1.8-4Z"/>
+  <path fill="none" stroke="#fff" stroke-opacity=".5" stroke-linecap="round" d="M31.4 36.9c2.8-1.6 4.3-4.4 4-7.4"/>
+</svg>

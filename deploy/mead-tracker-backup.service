@@ -1,0 +1,16 @@
+[Unit]
+Description=Create a verified Mead Tracker SQLite backup
+After=mead-tracker.service
+
+[Service]
+Type=oneshot
+User=meadtracker
+Group=meadtracker
+WorkingDirectory=/opt/mead-tracker
+EnvironmentFile=/etc/mead-tracker/mead-tracker.env
+UMask=0077
+ExecStart=/opt/mead-tracker/.venv/bin/python /opt/mead-tracker/manage.py backup_mead_tracker --keep 30
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true

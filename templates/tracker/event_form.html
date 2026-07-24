@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{% block event_title %}Update {{ batch.name }}{% endblock %} · Mead Tracker{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li><a href="{% url 'tracker:batch_detail' batch.pk %}">{{ batch.name }}</a></li>
+      <li aria-current="page">{% block breadcrumb_label %}Add update{% endblock %}</li>
+    </ol>
+  </nav>
+
+  <header class="page-heading page-heading--form">
+    <div>
+      <div class="eyebrow">{% block event_eyebrow %}Cellar update{% endblock %}</div>
+      <h1>{% block event_heading %}Update {{ batch.name }}{% endblock %}</h1>
+      <p class="lede">{% block event_intro %}Record what changed and when it happened.{% endblock %}</p>
+    </div>
+  </header>
+
+  <form method="post" class="editor-layout editor-layout--event" novalidate>
+    {% csrf_token %}
+    <section class="form-card" aria-labelledby="event-fields-heading">
+      <div class="form-card__heading">
+        <span class="form-card__step form-card__step--symbol" aria-hidden="true">{% block event_symbol %}✎{% endblock %}</span>
+        <div>
+          <h2 id="event-fields-heading">{% block event_card_heading %}Update details{% endblock %}</h2>
+          <p>Date and time default to now, but can be corrected before saving.</p>
+        </div>
+      </div>
+
+      {% include "tracker/includes/form_fields.html" %}
+
+      <div class="form-actions">
+        <a class="button button--ghost" href="{% url 'tracker:batch_detail' batch.pk %}">Cancel</a>
+        <button class="button button--primary" type="submit">{% block submit_label %}Save update{% endblock %}</button>
+      </div>
+    </section>
+
+    <aside class="editor-aside">
+      {% block event_aside %}
+        <div class="tip-card">
+          <span class="tip-card__icon" aria-hidden="true">i</span>
+          <h2>Record the real time</h2>
+          <p>If you are entering an older observation, change the measured or observed time—not just the time the record was created.</p>
+        </div>
+      {% endblock %}
+    </aside>
+  </form>
+{% endblock %}

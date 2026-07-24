@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Something went wrong · Mead Tracker{% endblock %}
+{% block content %}
+  <div class="error-page">
+    <span class="error-page__code">500</span>
+    <div class="eyebrow">A cork popped loose</div>
+    <h1>Mead Tracker hit an unexpected problem.</h1>
+    <p>Your submitted record may not have been saved. Return to the dashboard and check before trying again.</p>
+    <a class="button button--primary" href="{% url 'tracker:dashboard' %}">Return to batches</a>
+  </div>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Label for {{ batch.name }} · Mead Tracker{% endblock %}
+{% block body_class %}label-builder-page{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li><a href="{% url 'tracker:batch_detail' batch.pk %}">{{ batch.name }}</a></li>
+      <li aria-current="page">Label</li>
+    </ol>
+  </nav>
+
+  <header class="page-heading">
+    <div>
+      <div class="eyebrow">Bottle & vessel labels</div>
+      <h1>Create a label</h1>
+      <p class="lede">Choose a common size, preview the essentials, then download an exact-size PDF.</p>
+    </div>
+  </header>
+
+  {% if base_url_warning %}
+    <div class="message message--warning label-warning" role="alert">
+      <span class="message__icon" aria-hidden="true">△</span>
+      <div>
+        <strong>Check the QR address before printing.</strong>
+        <p>{{ base_url_warning }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="label-builder">
+    <section class="label-controls" aria-labelledby="label-options-heading">
+      <div class="form-card__heading">
+        <span class="form-card__step" aria-hidden="true">01</span>
+        <div>
+          <h2 id="label-options-heading">Label options</h2>
+          <p>Dimensions are physical print size.</p>
+        </div>
+      </div>
+
+      <form method="get" id="label-options-form" class="label-options-form" data-label-options>
+        {% with form=label_form %}
+          {% include "tracker/includes/form_fields.html" %}
+        {% endwith %}
+        <button class="button button--secondary button--wide" type="submit">Update preview</button>
+      </form>
+
+      <div class="print-note">
+        <span aria-hidden="true">i</span>
+        <p><strong>For accurate sizing</strong> Choose “Actual size” or “100%” in the print dialog. Do not use “Fit to page.”</p>
+      </div>
+    </section>
+
+    <section class="label-preview-panel" aria-labelledby="label-preview-heading">
+      <div class="label-preview-panel__heading">
+        <div>
+          <div class="eyebrow">Live preview</div>
+          <h2 id="label-preview-heading">{{ label_width|default:"3" }} × {{ label_height|default:"4" }} inches</h2>
+        </div>
+        <span>PDF output may be sharper than this screen preview</span>
+      </div>
+
+      <div class="label-stage">
+        <article
+          class="mead-label mead-label--{{ label_orientation|default:'portrait' }}"
+          style="--label-ratio: {{ label_aspect_ratio|default:'0.75' }};"
+          aria-label="Preview of label for {{ batch.name }}"
+        >
+          <div class="mead-label__rule"></div>
+          <div class="mead-label__ornament" aria-hidden="true">✦</div>
+          <p class="mead-label__kicker">Handcrafted mead</p>
+          <h3>{{ batch.name }}</h3>
+          {% if batch.style %}<p class="mead-label__style">{{ batch.style }}</p>{% endif %}
+          <div class="mead-label__qr">
+            <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+          </div>
+          <p class="mead-label__scan">Scan for batch notes</p>
+          <div class="mead-label__footer">
+            <span>Started</span>
+            <strong>
+              {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}Date not set{% endif %}
+            </strong>
+            {% if batch.batch_number %}<small>Batch #{{ batch.batch_number }}</small>{% endif %}
+          </div>
+        </article>
+      </div>
+
+      <div class="label-actions">
+        <button
+          class="button button--primary button--with-icon"
+          type="submit"
+          form="label-options-form"
+          formaction="{% url 'tracker:label_pdf' batch.pk %}"
+        >
+          <span aria-hidden="true">↧</span> Download PDF
+        </button>
+        <button class="button button--ghost" type="button" data-print-page>
+          <span aria-hidden="true">▧</span> Print preview
+        </button>
+      </div>
+
+      <div class="qr-test">
+        <span class="qr-test__icon" aria-hidden="true">✓</span>
+        <div>
+          <strong>Test before applying labels</strong>
+          <p>Scan the printed QR code with your phone and confirm it opens this batch over the network.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

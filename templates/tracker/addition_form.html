@@ -1,0 +1,22 @@
+{% extends "tracker/event_form.html" %}
+
+{% block event_title %}{% if form.instance.pk %}Edit addition{% else %}Add an ingredient{% endif %}{% endblock %}
+{% block breadcrumb_label %}{% if form.instance.pk %}Edit addition{% else %}Add ingredient{% endif %}{% endblock %}
+{% block event_eyebrow %}Recipe & additions{% endblock %}
+{% block event_heading %}{% if form.instance.pk %}Edit an addition{% else %}What went into {{ batch.name }}?{% endif %}{% endblock %}
+{% block event_intro %}Record honey, water, fruit, spices, nutrients, yeast, or anything else added to the batch.{% endblock %}
+{% block event_symbol %}+{% endblock %}
+{% block event_card_heading %}Ingredient details{% endblock %}
+{% block submit_label %}{% if form.instance.pk %}Save changes{% else %}Add ingredient{% endif %}{% endblock %}
+
+{% block event_aside %}
+  <div class="tip-card">
+    <span class="tip-card__icon" aria-hidden="true">⚖</span>
+    <h2>Use the measured unit</h2>
+    <p>Enter the value and unit shown by your scale or vessel. Mead Tracker keeps the original measurement instead of silently converting it.</p>
+  </div>
+  <div class="tip-card tip-card--link">
+    <h2>Staggered additions?</h2>
+    <p>Create a separate entry each time you add nutrients, fruit, spices, or more honey. Your timeline will preserve the sequence.</p>
+  </div>
+{% endblock %}

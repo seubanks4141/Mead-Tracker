@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Restore entry · Mead Tracker{% endblock %}
+{% block body_class %}confirmation-page{% endblock %}
+
+{% block content %}
+  <div class="confirmation-shell">
+    <section class="confirmation-card" aria-labelledby="restore-heading">
+      <span class="confirmation-card__icon confirmation-card__icon--success" aria-hidden="true">↶</span>
+      <div class="eyebrow">Restore record</div>
+      <h1 id="restore-heading">Return this {{ kind|default:"entry" }} to its batch?</h1>
+      <p>It will reappear in the batch record at its original measured or observed time.</p>
+      <div class="confirmation-card__object">
+        <strong>{{ object }}</strong>
+        {% if object.batch %}<span>{{ object.batch.name }}</span>{% endif %}
+      </div>
+      <form method="post" class="confirmation-actions">
+        {% csrf_token %}
+        <a class="button button--ghost" href="{{ cancel_url|default:'/' }}">Cancel</a>
+        <button class="button button--primary" type="submit">Restore entry</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}

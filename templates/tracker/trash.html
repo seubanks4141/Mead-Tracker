@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Trash · Mead Tracker{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li aria-current="page">Trash</li>
+    </ol>
+  </nav>
+
+  <header class="page-heading">
+    <div>
+      <div class="eyebrow">Recoverable records</div>
+      <h1>Trash</h1>
+      <p class="lede">Restore an entry to its original batch when something was removed by mistake.</p>
+    </div>
+  </header>
+
+  <section class="record-section" aria-labelledby="deleted-entries-heading">
+    <div class="record-section__heading">
+      <div>
+        <h2 id="deleted-entries-heading">Deleted entries</h2>
+        {% if deleted_entries %}<p>{{ deleted_entries|length }} recoverable record{{ deleted_entries|length|pluralize }}</p>{% endif %}
+      </div>
+    </div>
+
+    {% if deleted_entries %}
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Entry</th>
+              <th scope="col">Batch</th>
+              <th scope="col">Deleted</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in deleted_entries %}
+              <tr>
+                <td>
+                  <strong>{{ entry.title|default:entry.object }}</strong>
+                  <small>{{ entry.kind|title }}</small>
+                </td>
+                <td>{{ entry.batch.name|default:"—" }}</td>
+                <td>{{ entry.deleted_at|date:"M j, Y, g:i A" }}</td>
+                <td>
+                  <form method="post" action="{% url 'tracker:entry_restore' kind=entry.kind pk=entry.pk %}">
+                    {% csrf_token %}
+                    <button class="button button--small button--secondary" type="submit">Restore</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {% include "tracker/includes/empty_state.html" with icon="✓" title="Trash is empty" text="Removed readings, ingredients, and observations will be available here for recovery." %}
+    {% endif %}
+  </section>
+{% endblock %}

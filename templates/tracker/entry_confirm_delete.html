@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Move entry to trash · Mead Tracker{% endblock %}
+{% block body_class %}confirmation-page{% endblock %}
+
+{% block content %}
+  <div class="confirmation-shell">
+    <section class="confirmation-card" aria-labelledby="confirmation-heading">
+      <span class="confirmation-card__icon confirmation-card__icon--danger" aria-hidden="true">⌫</span>
+      <div class="eyebrow">Recoverable action</div>
+      <h1 id="confirmation-heading">Move this {{ kind|default:"entry" }} to trash?</h1>
+      <p>
+        It will disappear from the active batch record, but it can be restored from trash later.
+      </p>
+
+      <div class="confirmation-card__object">
+        <strong>{{ object }}</strong>
+        {% if object.batch %}<span>{{ object.batch.name }}</span>{% endif %}
+        {% if object.measured_at %}<time datetime="{{ object.measured_at|date:'c' }}">{{ object.measured_at|date:"M j, Y, g:i A" }}</time>{% endif %}
+        {% if object.observed_at %}<time datetime="{{ object.observed_at|date:'c' }}">{{ object.observed_at|date:"M j, Y, g:i A" }}</time>{% endif %}
+        {% if object.added_at %}<time datetime="{{ object.added_at|date:'c' }}">{{ object.added_at|date:"M j, Y, g:i A" }}</time>{% endif %}
+      </div>
+
+      <form method="post" class="confirmation-actions">
+        {% csrf_token %}
+        <label class="confirmation-check">
+          {{ form.confirm }}
+          <span>{{ form.confirm.label }}</span>
+        </label>
+        {% for error in form.confirm.errors %}
+          <p class="field__error">{{ error }}</p>
+        {% endfor %}
+        {% if object.batch %}
+          <a class="button button--ghost" href="{% url 'tracker:batch_detail' object.batch.pk %}">Keep entry</a>
+        {% else %}
+          <a class="button button--ghost" href="{% url 'tracker:dashboard' %}">Keep entry</a>
+        {% endif %}
+        <button class="button button--danger" type="submit">Move to trash</button>
+      </form>
+    </section>
+  </div>
+{% endblock %}

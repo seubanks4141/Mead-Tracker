@@ -1,0 +1,18 @@
+{% extends "tracker/event_form.html" %}
+
+{% block event_title %}Update status{% endblock %}
+{% block breadcrumb_label %}Update status{% endblock %}
+{% block event_eyebrow %}Batch stage{% endblock %}
+{% block event_heading %}Move {{ batch.name }} forward{% endblock %}
+{% block event_intro %}Choose the stage that best reflects where this batch is now.{% endblock %}
+{% block event_symbol %}✓{% endblock %}
+{% block event_card_heading %}New status{% endblock %}
+{% block submit_label %}Update status{% endblock %}
+
+{% block event_aside %}
+  <div class="tip-card">
+    <span class="tip-card__icon" aria-hidden="true">i</span>
+    <h2>Status is a signpost</h2>
+    <p>Use observations for the details. Status keeps the dashboard and batch summary easy to scan.</p>
+  </div>
+{% endblock %}

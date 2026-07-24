@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Users · Mead Tracker{% endblock %}
+{% block meta_description %}Manage Mead Tracker user access without removing production records.{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="{% url 'tracker:dashboard' %}">Batches</a></li>
+      <li aria-current="page">Users</li>
+    </ol>
+  </nav>
+
+  <header class="page-heading user-page-heading">
+    <div>
+      <div class="eyebrow">Administration</div>
+      <h1>User accounts</h1>
+      <p class="lede">Control who can sign in while preserving each person’s production history.</p>
+    </div>
+    <a class="button button--primary button--with-icon" href="{% url 'tracker:user_create' %}">
+      <span aria-hidden="true">＋</span>
+      Create user
+    </a>
+  </header>
+
+  <section class="user-stat-strip" aria-label="Account overview">
+    <div>
+      <span class="user-stat-strip__icon user-stat-strip__icon--active" aria-hidden="true">✓</span>
+      <span><strong>{{ active_user_count|default:"0" }}</strong><small>Active users</small></span>
+    </div>
+    <div>
+      <span class="user-stat-strip__icon" aria-hidden="true">◎</span>
+      <span><strong>{{ total_user_count|default:"0" }}</strong><small>Total accounts</small></span>
+    </div>
+    <div class="user-stat-strip__policy">
+      <span class="user-stat-strip__icon user-stat-strip__icon--safe" aria-hidden="true">◇</span>
+      <span><strong>Records stay intact</strong><small>Deactivation blocks login; it does not delete batches.</small></span>
+    </div>
+  </section>
+
+  <section class="user-directory" aria-labelledby="user-directory-heading">
+    <div class="record-section__heading user-directory__heading">
+      <div>
+        <div class="eyebrow">Access directory</div>
+        <h2 id="user-directory-heading">All users</h2>
+        <p>Administrators can add accounts or temporarily suspend access.</p>
+      </div>
+      {% if users %}
+        <label class="search-box user-search">
+          <span class="sr-only">Filter users</span>
+          <span aria-hidden="true">⌕</span>
+          <input type="search" placeholder="Find a user…" autocomplete="off" data-user-search>
+        </label>
+      {% endif %}
+    </div>
+
+    {% if users %}
+      <div class="user-table-wrap">
+        <table class="user-table">
+          <caption class="sr-only">Mead Tracker user accounts and access status</caption>
+          <thead>
+            <tr>
+              <th scope="col">User</th>
+              <th scope="col">Batches</th>
+              <th scope="col">Status</th>
+              <th scope="col">Joined / last login</th>
+              <th scope="col"><span class="sr-only">Account actions</span></th>
+            </tr>
+          </thead>
+          <tbody data-user-list>
+            {% for managed_user in users %}
+              <tr data-user-row data-search-text="{{ managed_user.username }} {{ managed_user.get_full_name }} {{ managed_user.email }}">
+                <td>
+                  <div class="user-identity">
+                    <span class="user-avatar" aria-hidden="true">{{ managed_user.username|slice:":1"|upper }}</span>
+                    <span>
+                      <strong>
+                        {{ managed_user.username }}
+                        {% if managed_user.pk == request.user.pk %}<span class="self-tag">You</span>{% endif %}
+                      </strong>
+                      {% if managed_user.get_full_name %}
+                        <small>{{ managed_user.get_full_name }}{% if managed_user.email %} · {{ managed_user.email }}{% endif %}</small>
+                      {% elif managed_user.email %}
+                        <small>{{ managed_user.email }}</small>
+                      {% else %}
+                        <small>No name or email provided</small>
+                      {% endif %}
+                      {% if managed_user.is_superuser %}<span class="role-tag">Administrator</span>{% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div class="batch-counts">
+                    <strong>{{ managed_user.active_batch_count|default:"0" }} active</strong>
+                    <small>{{ managed_user.total_batch_count|default:"0" }} total</small>
+                  </div>
+                </td>
+                <td>
+                  {% if managed_user.is_active %}
+                    <span class="account-status account-status--active"><span aria-hidden="true"></span>Active</span>
+                  {% else %}
+                    <span class="account-status account-status--inactive"><span aria-hidden="true"></span>Deactivated</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="account-dates">
+                    <span>Joined <time datetime="{{ managed_user.date_joined|date:'c' }}">{{ managed_user.date_joined|date:"M j, Y" }}</time></span>
+                    <small>
+                      {% if managed_user.last_login %}
+                        Last login <time datetime="{{ managed_user.last_login|date:'c' }}">{{ managed_user.last_login|date:"M j, Y, g:i A" }}</time>
+                      {% else %}
+                        Has not signed in
+                      {% endif %}
+                    </small>
+                  </div>
+                </td>
+                <td>
+                  <div class="user-actions">
+                    {% if managed_user.pk == request.user.pk %}
+                      <span class="current-account-note" title="You cannot deactivate the account you are currently using.">Current account</span>
+                    {% elif managed_user.is_active %}
+                      <form
+                        method="post"
+                        action="{% url 'tracker:user_deactivate' user_id=managed_user.pk %}"
+                        data-confirm="Deactivate {{ managed_user.username }}? They will no longer be able to sign in, but all of their batches and history will be preserved."
+                      >
+                        {% csrf_token %}
+                        <button class="user-action-button user-action-button--deactivate" type="submit">Deactivate</button>
+                      </form>
+                    {% else %}
+                      <form method="post" action="{% url 'tracker:user_reactivate' user_id=managed_user.pk %}">
+                        {% csrf_token %}
+                        <button class="user-action-button user-action-button--reactivate" type="submit">Reactivate</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="search-empty user-search-empty" hidden data-user-search-empty>No user accounts match that search.</p>
+
+      {% if page_obj.has_other_pages %}
+        <nav class="pagination" aria-label="User list pages">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">← Previous</a>
+          {% else %}
+            <span aria-disabled="true">← Previous</span>
+          {% endif %}
+          <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next →</a>
+          {% else %}
+            <span aria-disabled="true">Next →</span>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      {% url 'tracker:user_create' as create_user_url %}
+      {% include "tracker/includes/empty_state.html" with icon="◎" title="No user accounts yet" text="Create an account for someone who needs their own private batch workspace." action_url=create_user_url action_label="Create user" %}
+    {% endif %}
+  </section>
+
+  <aside class="user-preservation-note" aria-labelledby="preservation-heading">
+    <span aria-hidden="true">i</span>
+    <div>
+      <h2 id="preservation-heading">What deactivation does</h2>
+      <p>A deactivated user cannot sign in or use their QR shortcuts. Their batches, ingredients, readings, observations, labels, and audit history remain stored and can be accessed again after reactivation.</p>
+    </div>
+  </aside>
+{% endblock %}

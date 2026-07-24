@@ -1,0 +1,19 @@
+{% extends "tracker/event_form.html" %}
+
+{% block event_title %}{% if form.instance.pk %}Edit observation{% else %}Add observation{% endif %}{% endblock %}
+{% block breadcrumb_label %}{% if form.instance.pk %}Edit observation{% else %}Add note{% endif %}{% endblock %}
+{% block event_eyebrow %}Batch journal{% endblock %}
+{% block event_heading %}{% if form.instance.pk %}Edit your note{% else %}What do you notice?{% endif %}{% endblock %}
+{% block event_intro %}Capture aromas, flavor, fermentation behavior, decisions, or anything useful for your future self.{% endblock %}
+{% block event_symbol %}✎{% endblock %}
+{% block event_card_heading %}Observation{% endblock %}
+{% block submit_label %}{% if form.instance.pk %}Save changes{% else %}Add to journal{% endif %}{% endblock %}
+
+{% block event_aside %}
+  <div class="tip-card">
+    <span class="tip-card__icon" aria-hidden="true">✦</span>
+    <h2>Specific beats perfect</h2>
+    <p>Useful notes can be simple: airlock pace, color, clarity, aroma, flavor, temperature, or the reason you made a change.</p>
+    <p class="tip-card__example">Example: <strong>Bright citrus aroma; fermentation visibly slower than yesterday.</strong></p>
+  </div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Page not found · Mead Tracker{% endblock %}
+{% block content %}
+  <div class="error-page">
+    <span class="error-page__code">404</span>
+    <div class="eyebrow">Wrong cellar door</div>
+    <h1>That page could not be found.</h1>
+    <p>The link may be old, incomplete, or connected to a record that is no longer active.</p>
+    <a class="button button--primary" href="{% url 'tracker:dashboard' %}">Return to batches</a>
+  </div>
+{% endblock %}

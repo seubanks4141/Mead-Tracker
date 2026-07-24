@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Quick update · {{ batch.name }}{% endblock %}
+{% block body_class %}mobile-record-page{% endblock %}
+{% block main_class %}mobile-record-shell{% endblock %}
+
+{% block content %}
+  <header class="mobile-record-hero">
+    <div class="mobile-record-hero__top">
+      {% with mark=batch.visual_mark %}
+        {% include "tracker/includes/visual_mark.html" with batch=batch mark=mark mark_size="compact" %}
+      {% endwith %}
+      {% include "tracker/includes/batch_status.html" %}
+    </div>
+    <div class="eyebrow">Quick cellar update</div>
+    <h1>{{ batch.name }}</h1>
+    <p>
+      {% if batch.batch_number %}Batch #{{ batch.batch_number }} <span aria-hidden="true">·</span>{% endif %}
+      Started
+      {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}date not set{% endif %}
+    </p>
+    <div class="mobile-record-stage">
+      <strong>{{ batch.stage_visual.stage_label|default:batch.get_status_display|default:"Stage not set" }}</strong>
+      <span>{{ batch.stage_visual.summary|default:"Add an update to refresh this stage summary." }}</span>
+    </div>
+  </header>
+
+  {% if base_url_warning %}
+    <div class="message message--warning mobile-record-warning" role="alert">
+      <span class="message__icon" aria-hidden="true">△</span>
+      <span>{{ base_url_warning }}</span>
+    </div>
+  {% endif %}
+
+  <section class="mobile-reading-card" aria-label="Latest batch reading">
+    <div>
+      <span>Latest gravity</span>
+      <strong>{% if latest_gravity %}{{ latest_gravity.specific_gravity }}{% else %}—{% endif %}</strong>
+      {% if latest_gravity %}<small>{{ latest_gravity.measured_at|timesince }} ago</small>{% endif %}
+    </div>
+    <div>
+      <span>Estimated ABV</span>
+      <strong>{% if estimated_abv != None %}{{ estimated_abv|floatformat:1 }}<small>%</small>{% else %}—{% endif %}</strong>
+      <small>{{ batch.get_status_display|default:batch.status|title }}</small>
+    </div>
+  </section>
+
+  <section class="mobile-update-actions" aria-labelledby="mobile-actions-heading">
+    <h2 id="mobile-actions-heading">Add an update</h2>
+    <a class="mobile-update-button mobile-update-button--primary" href="{% url 'tracker:gravity_add' batch.pk %}">
+      <span class="mobile-update-button__icon" aria-hidden="true">↘</span>
+      <span><strong>Gravity reading</strong><small>Specific gravity, date, time, and temperature</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+    <a class="mobile-update-button" href="{% url 'tracker:observation_add' batch.pk %}">
+      <span class="mobile-update-button__icon" aria-hidden="true">✎</span>
+      <span><strong>Observation</strong><small>Aroma, flavor, appearance, or a quick note</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+    <a class="mobile-update-button" href="{% url 'tracker:addition_add' batch.pk %}">
+      <span class="mobile-update-button__icon" aria-hidden="true">＋</span>
+      <span><strong>Ingredient or addition</strong><small>Honey, nutrient, fruit, spice, water, or other</small></span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </section>
+
+  {% if activity %}
+    <section class="mobile-recent" aria-labelledby="mobile-recent-heading">
+      <div class="section-heading">
+        <h2 id="mobile-recent-heading">Latest updates</h2>
+        <a href="{% url 'tracker:batch_detail' batch.pk %}">Full record</a>
+      </div>
+      <ol>
+        {% for item in activity|slice:":4" %}
+          <li>
+            <span class="activity-list__marker activity-list__marker--{{ item.kind|slugify }}" aria-hidden="true">
+              {% if item.kind == "gravity" %}↘{% elif item.kind == "addition" %}+{% elif item.kind == "status" %}✓{% else %}✎{% endif %}
+            </span>
+            <div>
+              <strong>{% if item.title %}{{ item.title }}{% else %}{{ item.kind|title }}{% endif %}</strong>
+              <p>{{ item.summary|default:item.description }}</p>
+              <time datetime="{{ item.timestamp|date:'c' }}">{{ item.timestamp|timesince }} ago</time>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+
+  <div class="mobile-record-footer">
+    <a href="{% url 'tracker:batch_detail' batch.pk %}">Open the complete batch record</a>
+    <span>Times display in {{ display_timezone|default:"America/Chicago" }}</span>
+  </div>
+{% endblock %}

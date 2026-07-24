@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Create account · Mead Tracker{% endblock %}
+{% block meta_description %}Create a Mead Tracker account for your personal batch records.{% endblock %}
+{% block body_class %}auth-page signup-page{% endblock %}
+{% block main_class %}auth-shell auth-shell--signup{% endblock %}
+
+{% block content %}
+  <section class="auth-card auth-card--signup" aria-labelledby="signup-title">
+    <div class="auth-card__art auth-card__art--signup" aria-hidden="true">
+      <div class="auth-card__orb auth-card__orb--one"></div>
+      <div class="auth-card__orb auth-card__orb--two"></div>
+      <div class="signup-art">
+        <span class="signup-art__drop"></span>
+        <span class="signup-art__line"></span>
+        <span class="signup-art__line signup-art__line--short"></span>
+        <span class="signup-art__line"></span>
+      </div>
+      <p>Your recipes, readings, and cellar notes—all in one dependable record.</p>
+    </div>
+
+    <div class="auth-card__form auth-card__form--signup">
+      <a class="auth-back-link" href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}"><span aria-hidden="true">←</span> Back to sign in</a>
+      <div class="eyebrow">Your meadery</div>
+      <h1 id="signup-title">Create your account</h1>
+      <p class="lede">Set up a private workspace for your batches and production notes.</p>
+
+      <form method="post" class="signup-form" novalidate>
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        {% include "tracker/includes/form_fields.html" %}
+        <button class="button button--primary button--wide" type="submit">Create account</button>
+      </form>
+
+      <div class="account-privacy-note">
+        <span aria-hidden="true">⌾</span>
+        <p>Your batch records belong to this account. Other regular users cannot open or change them.</p>
+      </div>
+
+      <p class="auth-card__login-link">Already have an account? <a href="{% url 'login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Sign in</a></p>
+    </div>
+  </section>
+{% endblock %}

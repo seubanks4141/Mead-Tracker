@@ -1,0 +1,16 @@
+# Django 5.2 is the current long-term-support line and supports Python 3.14.
+Django==5.2.16
+
+# Cross-platform production WSGI server (Windows and Linux).
+waitress==3.0.2
+
+# Static-file serving from the Django process.
+whitenoise==6.12.0
+
+# Exact-size PDF labels and vector QR codes.
+reportlab==5.0.0
+segno==1.6.6
+
+# Loads local development settings from .env without overriding real
+# environment variables supplied by systemd, a shell, or a service manager.
+python-dotenv==1.2.2
