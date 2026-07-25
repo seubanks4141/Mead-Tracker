@@ -7,7 +7,7 @@ database file.
 
 ## Requirements
 
-- Python 3.12 or newer (this Windows workspace was verified with Python 3.14)
+- Python 3.10 or newer (this Windows workspace was verified with Python 3.14)
 - A modern web browser
 - On Linux, a dedicated service account is recommended
 
@@ -131,21 +131,67 @@ copy. Copying an actively written SQLite file is not a reliable backup.
 
 ## Linux VM deployment
 
-The example below installs the application at `/opt/mead-tracker`, persists
-state in `/var/lib/mead-tracker`, and runs it as an unprivileged account.
-Adjust commands for the VM's distribution and deployment process.
+The included deployment script installs the application at
+`/opt/mead-tracker`, keeps configuration in `/etc/mead-tracker`, persists data
+under `/var/lib/mead-tracker`, and runs it as an unprivileged account. It
+supports apt- or dnf/yum-based systemd servers with Python 3.10 or newer.
+
+### Automated initial setup
+
+Copy `deploy/mead-tracker.sh` to the Linux server and run:
 
 ```bash
-sudo useradd --system --user-group --home /opt/mead-tracker --shell /usr/sbin/nologin meadtracker
-sudo mkdir -p /opt/mead-tracker /etc/mead-tracker
-sudo chown meadtracker:meadtracker /opt/mead-tracker
+sudo sh mead-tracker.sh setup
+```
 
-# Copy the release into /opt/mead-tracker, then:
+Interactive setup asks for the server's LAN address and port, generates a
+private Django secret, installs the systemd application and backup units, and
+starts the service. For a non-interactive LAN installation:
+
+```bash
+sudo env \
+  MEAD_TRACKER_SERVER_ADDRESS=10.0.10.25 \
+  MEAD_TRACKER_PORT=8765 \
+  MEAD_TRACKER_ALLOW_SIGNUPS=true \
+  sh mead-tracker.sh setup
+```
+
+The script preserves any existing environment file and database. It installs
+itself as `mead-tracker-deploy`, so future releases can be applied with:
+
+```bash
+sudo mead-tracker-deploy update
+```
+
+Updates require a clean, non-divergent `main` checkout. Before changing code
+or dependencies, the script pauses the backup timer and creates a verified
+SQLite backup. It then applies a fast-forward-only update and restores the
+timer only after the updated application passes its health check.
+
+The generated settings are suitable for direct HTTP access from a trusted
+LAN. Before exposing the application to the internet, edit
+`/etc/mead-tracker/mead-tracker.env` for an HTTPS reverse proxy as described
+below.
+
+### Manual setup
+
+The equivalent manual setup is shown below. Adjust commands for the VM's
+distribution and deployment process.
+
+```bash
+sudo groupadd --system meadtracker
+sudo useradd --system --gid meadtracker --home /opt/mead-tracker --shell /usr/sbin/nologin meadtracker
+sudo git clone https://github.com/seubanks4141/Mead-Tracker.git /opt/mead-tracker
+
+# Keep code and the virtual environment root-owned. Only runtime directories
+# are writable by the web-service account.
 cd /opt/mead-tracker
-sudo -u meadtracker python3 -m venv .venv
-sudo -u meadtracker .venv/bin/python -m pip install --upgrade pip
-sudo -u meadtracker .venv/bin/python -m pip install -r requirements.txt
+sudo python3 -m venv .venv
+sudo .venv/bin/python -m pip install --upgrade pip
+sudo .venv/bin/python -m pip install -r requirements.txt
+sudo install -d -o meadtracker -g meadtracker -m 0750 staticfiles media
 
+sudo install -d -o root -g meadtracker -m 0750 /etc/mead-tracker
 sudo install -o root -g meadtracker -m 0640 \
   deploy/mead-tracker.env.example \
   /etc/mead-tracker/mead-tracker.env
