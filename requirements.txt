@@ -11,8 +11,9 @@ whitenoise==6.12.0
 reportlab==5.0.0
 segno==1.6.6
 
-# Validates user-uploaded observation photos.
+# Validates user-uploaded photos and decodes mobile HEIC/HEIF images.
 Pillow==12.3.0
+pillow-heif==1.5.0
 
 # Loads local development settings from .env without overriding real
 # environment variables supplied by systemd, a shell, or a service manager.

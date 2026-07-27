@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 from django.db.backends.signals import connection_created
+from pillow_heif import register_heif_opener
 
 
 def configure_sqlite(sender, connection, **kwargs) -> None:
@@ -18,6 +19,7 @@ class TrackerConfig(AppConfig):
     name = "tracker"
 
     def ready(self) -> None:
+        register_heif_opener(thumbnails=False)
         connection_created.connect(
             configure_sqlite,
             dispatch_uid="tracker.configure_sqlite",

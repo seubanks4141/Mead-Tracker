@@ -17,6 +17,7 @@ from .models import (
     Observation,
     QuantityUnit,
 )
+from .services.photos import normalize_observation_photo
 
 
 class LocalDateTimeInput(forms.DateTimeInput):
@@ -208,7 +209,10 @@ class ObservationForm(StyledFormMixin, forms.ModelForm):
                 }
             ),
             "photo": forms.FileInput(
-                attrs={"accept": "image/jpeg,image/png,image/webp"}
+                attrs={
+                    "accept": "image/*,.heic,.heif",
+                    "data-observation-photo": "",
+                }
             ),
         }
 
@@ -217,6 +221,12 @@ class ObservationForm(StyledFormMixin, forms.ModelForm):
         self.fields["observed_at"].input_formats = ("%Y-%m-%dT%H:%M",)
         if not self.instance.pk or not self.instance.photo:
             self.fields.pop("remove_photo")
+
+    def clean_photo(self):
+        photo = self.cleaned_data.get("photo")
+        if not photo or not self.files.get(self.add_prefix("photo")):
+            return photo
+        return normalize_observation_photo(photo)
 
     def clean(self):
         cleaned = super().clean()

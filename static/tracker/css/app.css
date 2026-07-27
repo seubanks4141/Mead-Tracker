@@ -1831,6 +1831,19 @@ h3 {
   resize: vertical;
 }
 
+.photo-selection-status {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--ink-500);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.photo-selection-status[data-selected="true"] {
+  color: var(--sage-700);
+  font-weight: 750;
+}
+
 .field input:hover,
 .field select:hover,
 .field textarea:hover,

@@ -138,6 +138,7 @@ class TrackerIntegrationTests(TestCase):
             format=image_format,
         )
         content_types = {
+            "HEIF": "image/heic",
             "JPEG": "image/jpeg",
             "PNG": "image/png",
             "WEBP": "image/webp",
@@ -652,8 +653,9 @@ class TrackerIntegrationTests(TestCase):
                 )
                 self.assertContains(
                     form_response,
-                    'accept="image/jpeg,image/png,image/webp"',
+                    'accept="image/*,.heic,.heif"',
                 )
+                self.assertContains(form_response, "data-observation-photo")
 
                 response = self.client.post(
                     reverse("tracker:observation_add", args=[self.batch.pk]),
@@ -705,6 +707,47 @@ class TrackerIntegrationTests(TestCase):
                     f"{reverse('login')}?next={photo_url}",
                     fetch_redirect_response=False,
                 )
+
+    def test_mobile_heic_photo_is_converted_to_browser_safe_jpeg(self):
+        self.login_as_owner()
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.post(
+                    reverse("tracker:observation_add", args=[self.batch.pk]),
+                    {
+                        **self.observation_form_data(),
+                        "photo": self.observation_photo(
+                            name="IMG_2048.HEIC",
+                            image_format="HEIF",
+                        ),
+                    },
+                )
+
+                self.assertRedirects(
+                    response,
+                    reverse("tracker:batch_detail", args=[self.batch.pk]),
+                    fetch_redirect_response=False,
+                )
+                observation = self.batch.observations.get()
+                self.assertEqual(Path(observation.photo.name).suffix, ".jpg")
+                self.assertTrue(
+                    Path(observation.photo.path).read_bytes().startswith(
+                        b"\xff\xd8\xff"
+                    )
+                )
+
+                photo_response = self.client.get(
+                    reverse(
+                        "tracker:observation_photo",
+                        args=[observation.pk],
+                    )
+                )
+                self.assertEqual(photo_response.status_code, 200)
+                self.assertEqual(
+                    photo_response.headers["Content-Type"],
+                    "image/jpeg",
+                )
+                photo_response.close()
 
     def test_observation_photo_can_be_replaced_and_removed(self):
         self.login_as_owner()

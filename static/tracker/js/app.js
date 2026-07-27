@@ -461,4 +461,20 @@
     };
     textarea.addEventListener("input", resize);
   });
+
+  $$("[data-observation-photo]").forEach((input) => {
+    const selectionStatus = document.createElement("span");
+    selectionStatus.className = "photo-selection-status";
+    selectionStatus.setAttribute("aria-live", "polite");
+    selectionStatus.textContent = "No photo selected.";
+    input.insertAdjacentElement("afterend", selectionStatus);
+
+    input.addEventListener("change", () => {
+      const photo = input.files && input.files[0];
+      selectionStatus.textContent = photo
+        ? `Selected: ${photo.name}`
+        : "No photo selected.";
+      selectionStatus.dataset.selected = String(Boolean(photo));
+    });
+  });
 })();

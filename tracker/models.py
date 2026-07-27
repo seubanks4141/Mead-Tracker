@@ -510,11 +510,21 @@ class Observation(SoftDeleteModel):
         blank=True,
         validators=[
             FileExtensionValidator(
-                allowed_extensions=("jpg", "jpeg", "png", "webp")
+                allowed_extensions=(
+                    "jpg",
+                    "jpeg",
+                    "png",
+                    "webp",
+                    "heic",
+                    "heif",
+                )
             ),
             validate_observation_photo_size,
         ],
-        help_text="Optional. Upload a JPEG, PNG, or WebP photo up to 10 MB.",
+        help_text=(
+            "Optional. Upload a JPEG, PNG, WebP, HEIC, or HEIF photo up to "
+            "10 MB. Phone HEIC/HEIF photos are converted to JPEG."
+        ),
     )
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
