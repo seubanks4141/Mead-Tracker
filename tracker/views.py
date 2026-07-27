@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import mimetypes
 from io import BytesIO
 from urllib.parse import urlparse
 
@@ -14,7 +15,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Count, F, Prefetch, Q
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -545,7 +546,11 @@ def _event_form(
     template_name: str = "tracker/event_form.html",
 ):
     before = snapshot(instance) if instance is not None else {}
-    form = form_class(request.POST or None, instance=instance)
+    form = form_class(
+        request.POST or None,
+        request.FILES or None,
+        instance=instance,
+    )
     if request.method == "POST" and form.is_valid():
         entry = form.save(commit=False)
         entry.batch = batch
@@ -685,6 +690,26 @@ def observation_edit(request, pk):
         instance=entry,
         template_name="tracker/observation_form.html",
     )
+
+
+@login_required
+def observation_photo(request, pk):
+    observation, _, _ = _owned_entry(request.user, "observation", pk)
+    if not observation.photo:
+        raise Http404("This observation does not have a photo.")
+
+    try:
+        photo_file = observation.photo.open("rb")
+    except (FileNotFoundError, OSError) as exc:
+        raise Http404("The observation photo could not be found.") from exc
+
+    content_type, _ = mimetypes.guess_type(observation.photo.name)
+    response = FileResponse(
+        photo_file,
+        content_type=content_type or "application/octet-stream",
+    )
+    response["Cache-Control"] = "private, max-age=3600"
+    return response
 
 
 @login_required

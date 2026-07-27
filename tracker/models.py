@@ -9,23 +9,50 @@ possible without losing an audit-friendly record of when data was entered.
 
 from __future__ import annotations
 
+import logging
 import secrets
 import uuid
 from decimal import Decimal
+from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+
+
+MAX_OBSERVATION_PHOTO_BYTES = 10 * 1024 * 1024
+logger = logging.getLogger(__name__)
 
 
 def generate_qr_token() -> str:
     """Return an opaque, URL-safe token suitable for a printed QR code."""
 
     return secrets.token_urlsafe(32)
+
+
+def observation_photo_upload_to(instance, filename: str) -> str:
+    """Store photos under their batch with an unguessable server-side name."""
+
+    extension = Path(filename).suffix.lower()
+    return (
+        f"observation_photos/{instance.batch_id}/"
+        f"{uuid.uuid4().hex}{extension}"
+    )
+
+
+def validate_observation_photo_size(photo) -> None:
+    """Reject uploads large enough to strain a small self-hosted deployment."""
+
+    if photo.size > MAX_OBSERVATION_PHOTO_BYTES:
+        raise ValidationError("Photo files must be 10 MB or smaller.")
 
 
 class QuantityUnit(models.TextChoices):
@@ -478,6 +505,17 @@ class Observation(SoftDeleteModel):
         default=Category.GENERAL,
     )
     text = models.TextField()
+    photo = models.ImageField(
+        upload_to=observation_photo_upload_to,
+        blank=True,
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=("jpg", "jpeg", "png", "webp")
+            ),
+            validate_observation_photo_size,
+        ],
+        help_text="Optional. Upload a JPEG, PNG, or WebP photo up to 10 MB.",
+    )
     recorded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -500,6 +538,35 @@ class Observation(SoftDeleteModel):
     def __str__(self) -> str:
         preview = self.text[:60]
         return f"{self.get_category_display()}: {preview}"
+
+    def save(self, *args, **kwargs):
+        """Remove a replaced photo after the database points at its successor."""
+
+        update_fields = kwargs.get("update_fields")
+        photo_may_change = update_fields is None or "photo" in update_fields
+        previous_photo_name = ""
+        if photo_may_change and self.pk and not self._state.adding:
+            previous_photo_name = (
+                type(self)
+                .all_objects.filter(pk=self.pk)
+                .values_list("photo", flat=True)
+                .first()
+                or ""
+            )
+
+        super().save(*args, **kwargs)
+
+        current_photo_name = self.photo.name if self.photo else ""
+        if previous_photo_name and previous_photo_name != current_photo_name:
+            try:
+                self._meta.get_field("photo").storage.delete(previous_photo_name)
+            except Exception:
+                # File cleanup is best-effort and must not turn a saved journal
+                # update into a user-visible failure.
+                logger.exception(
+                    "Could not delete replaced observation photo %s",
+                    previous_photo_name,
+                )
 
     @property
     def created_at(self):

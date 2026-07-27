@@ -1774,6 +1774,7 @@ h3 {
 .field--notes,
 .field--text,
 .field--observation,
+.field--photo,
 .field--name,
 .field--status,
 .field--reading_type,
@@ -2927,6 +2928,66 @@ h3 {
 
 .prose p:last-child {
   margin-bottom: 0;
+}
+
+.journal-entry__photo {
+  display: block;
+  max-width: 38rem;
+  margin-top: 0.9rem;
+  overflow: hidden;
+  background: var(--paper-deep);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.journal-entry__photo img {
+  display: block;
+  width: 100%;
+  max-height: 36rem;
+  object-fit: contain;
+}
+
+.journal-entry__photo:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--amber-500) 40%, transparent);
+  outline-offset: 3px;
+}
+
+.current-observation-photo {
+  display: grid;
+  padding: 1rem;
+  margin-top: 1.25rem;
+  background: var(--paper-warm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  gap: 0.8rem;
+  grid-template-columns: minmax(0, 1fr) 8rem;
+}
+
+.current-observation-photo > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.current-observation-photo strong {
+  color: var(--ink-800);
+  font-size: 0.76rem;
+}
+
+.current-observation-photo span {
+  color: var(--ink-600);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.current-observation-photo img {
+  width: 8rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
 }
 
 .edited-note {

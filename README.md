@@ -73,6 +73,7 @@ Do not expose the development setup directly to the public internet.
 | `MEAD_TRACKER_ALLOW_SIGNUPS` | follows debug mode | Show self-registration and accept new regular accounts |
 | `MEAD_TRACKER_DB_PATH` | project database | Absolute path to the SQLite database |
 | `MEAD_TRACKER_BACKUP_DIR` | project backups | Directory for verified SQLite snapshots |
+| `MEAD_TRACKER_MEDIA_ROOT` | project media directory | Directory for uploaded observation photos |
 | `MEAD_TRACKER_PUBLIC_BASE_URL` | local URL | Stable, phone-reachable origin placed in QR links |
 | `MEAD_TRACKER_TIME_ZONE` | `America/Chicago` | Display timezone for recorded events |
 | `MEAD_TRACKER_TRUST_PROXY_HEADERS` | `false` | Trust HTTPS/host headers from a controlled reverse proxy |
@@ -120,14 +121,17 @@ The portable runtime validation can also be run on its own:
 python -m unittest tests.test_runtime_config
 ```
 
-Create a transactionally consistent backup while the application is running:
+Create a transactionally consistent database backup while the application is
+running:
 
 ```powershell
 python manage.py backup_mead_tracker
 ```
 
-Before manually moving the live database file, stop the application and make a
-copy. Copying an actively written SQLite file is not a reliable backup.
+The command snapshots SQLite only. Also copy `MEAD_TRACKER_MEDIA_ROOT` to
+preserve uploaded observation photos. Before manually moving the live database
+file, stop the application and make a copy. Copying an actively written SQLite
+file is not a reliable backup.
 
 ## Linux VM deployment
 
@@ -247,11 +251,13 @@ migrations and `collectstatic` before accepting traffic.
 
 ## Data and backup notes
 
-The SQLite database is the application's primary data. In Linux production,
-keep it under `/var/lib/mead-tracker` rather than inside the code checkout.
-Back up that directory to another disk or machine and periodically test a
-restore. Generated labels can be recreated; the database and secret
-configuration cannot.
+The SQLite database and uploaded-photo media directory are the application's
+primary data. In Linux production, keep both under `/var/lib/mead-tracker`
+rather than inside the code checkout. The included backup command and timer
+snapshot SQLite only, so back up the full state directory to another disk or
+machine to preserve photos, and periodically test a restore. Generated labels
+can be recreated; the database, uploaded photos, and secret configuration
+cannot.
 
 For an on-demand verified snapshot on Linux:
 

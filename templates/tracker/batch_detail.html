@@ -422,6 +422,20 @@
                     </details>
                   </header>
                   <div class="prose">{{ observation.text|linebreaks }}</div>
+                  {% if observation.photo %}
+                    <a
+                      class="journal-entry__photo"
+                      href="{% url 'tracker:observation_photo' observation.pk %}"
+                      aria-label="Open the photo attached to this observation"
+                    >
+                      <img
+                        src="{% url 'tracker:observation_photo' observation.pk %}"
+                        alt="Photo for the {{ observation.get_category_display|lower }} observation from {{ observation.observed_at|date:'F j, Y' }}"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    </a>
+                  {% endif %}
                   {% if observation.updated_at and observation.updated_at != observation.created_at %}
                     <small class="edited-note">Edited {{ observation.updated_at|date:"M j, Y, g:i A" }}</small>
                   {% endif %}

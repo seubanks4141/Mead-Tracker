@@ -127,6 +127,7 @@ validate_fixed_paths() {
         "$STATE_DIR" \
         "$INSTALL_MARKER" \
         "$STATE_DIR/backups" \
+        "$STATE_DIR/media" \
         "$LOCK_FILE"
     do
         [ ! -L "$protected_path" ] \
@@ -440,6 +441,7 @@ MEAD_TRACKER_TRUSTED_PROXY=127.0.0.1
 
 MEAD_TRACKER_DB_PATH=$STATE_DIR/mead-tracker.sqlite3
 MEAD_TRACKER_BACKUP_DIR=$STATE_DIR/backups
+MEAD_TRACKER_MEDIA_ROOT=$STATE_DIR/media
 MEAD_TRACKER_PUBLIC_BASE_URL=http://$setup_address:$setup_port
 EOF
     install \
@@ -457,6 +459,7 @@ ensure_state_directories() {
     phase="preparing persistent data directories"
     install -d -o "$APP_USER" -g "$APP_GROUP" -m 0750 "$STATE_DIR"
     install -d -o "$APP_USER" -g "$APP_GROUP" -m 0700 "$STATE_DIR/backups"
+    install -d -o "$APP_USER" -g "$APP_GROUP" -m 0700 "$STATE_DIR/media"
     install -d -o "$APP_USER" -g "$APP_GROUP" -m 0750 \
         "$APP_DIR/staticfiles" \
         "$APP_DIR/media"

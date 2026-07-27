@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+from io import BytesIO
 import json
 import re
+import tempfile
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from PIL import Image
 
 from tracker.models import (
     Addition,
@@ -125,6 +130,23 @@ class TrackerIntegrationTests(TestCase):
         }
         data.update(overrides)
         return data
+
+    def observation_photo(self, name="carboy.png", image_format="PNG"):
+        contents = BytesIO()
+        Image.new("RGB", (12, 8), "#b66a2c").save(
+            contents,
+            format=image_format,
+        )
+        content_types = {
+            "JPEG": "image/jpeg",
+            "PNG": "image/png",
+            "WEBP": "image/webp",
+        }
+        return SimpleUploadedFile(
+            name,
+            contents.getvalue(),
+            content_type=content_types[image_format],
+        )
 
     def assert_local_datetime(self, value, expected):
         self.assertEqual(
@@ -616,6 +638,139 @@ class TrackerIntegrationTests(TestCase):
         )
         self.assert_local_datetime(observation.observed_at, "2026-06-23T18:40")
         self.assertEqual(observation.recorded_at, original_recorded_at)
+
+    def test_observation_photo_upload_display_and_owner_access(self):
+        self.login_as_owner()
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                form_response = self.client.get(
+                    reverse("tracker:observation_add", args=[self.batch.pk])
+                )
+                self.assertContains(
+                    form_response,
+                    'enctype="multipart/form-data"',
+                )
+                self.assertContains(
+                    form_response,
+                    'accept="image/jpeg,image/png,image/webp"',
+                )
+
+                response = self.client.post(
+                    reverse("tracker:observation_add", args=[self.batch.pk]),
+                    {
+                        **self.observation_form_data(),
+                        "photo": self.observation_photo(),
+                    },
+                )
+
+                observation = self.batch.observations.get()
+                photo_url = reverse(
+                    "tracker:observation_photo",
+                    args=[observation.pk],
+                )
+                self.assertRedirects(
+                    response,
+                    reverse("tracker:batch_detail", args=[self.batch.pk]),
+                    fetch_redirect_response=False,
+                )
+                self.assertTrue(Path(observation.photo.path).is_file())
+
+                detail_response = self.client.get(
+                    reverse("tracker:batch_detail", args=[self.batch.pk])
+                )
+                self.assertContains(detail_response, photo_url, count=2)
+                self.assertContains(detail_response, 'loading="lazy"')
+
+                photo_response = self.client.get(photo_url)
+                self.assertEqual(photo_response.status_code, 200)
+                self.assertEqual(
+                    photo_response.headers["Content-Type"],
+                    "image/png",
+                )
+                self.assertEqual(
+                    photo_response.headers["Cache-Control"],
+                    "private, max-age=3600",
+                )
+                self.assertTrue(
+                    b"".join(photo_response.streaming_content).startswith(
+                        b"\x89PNG\r\n\x1a\n"
+                    )
+                )
+
+                self.client.force_login(self.other_user)
+                self.assertEqual(self.client.get(photo_url).status_code, 404)
+                self.client.logout()
+                self.assertRedirects(
+                    self.client.get(photo_url),
+                    f"{reverse('login')}?next={photo_url}",
+                    fetch_redirect_response=False,
+                )
+
+    def test_observation_photo_can_be_replaced_and_removed(self):
+        self.login_as_owner()
+        with tempfile.TemporaryDirectory() as media_root:
+            with self.settings(MEDIA_ROOT=media_root):
+                self.client.post(
+                    reverse("tracker:observation_add", args=[self.batch.pk]),
+                    {
+                        **self.observation_form_data(),
+                        "photo": self.observation_photo(),
+                    },
+                )
+                observation = self.batch.observations.get()
+                original_path = Path(observation.photo.path)
+
+                response = self.client.post(
+                    reverse("tracker:observation_edit", args=[observation.pk]),
+                    {
+                        **self.observation_form_data(
+                            text="The carboy is clearing from the top down."
+                        ),
+                        "photo": self.observation_photo(
+                            name="clearing.webp",
+                            image_format="WEBP",
+                        ),
+                    },
+                )
+                self.assertEqual(response.status_code, 302)
+                observation.refresh_from_db()
+                replacement_path = Path(observation.photo.path)
+                self.assertFalse(original_path.exists())
+                self.assertTrue(replacement_path.is_file())
+                self.assertEqual(replacement_path.suffix, ".webp")
+
+                response = self.client.post(
+                    reverse("tracker:observation_edit", args=[observation.pk]),
+                    {
+                        **self.observation_form_data(),
+                        "remove_photo": "on",
+                    },
+                )
+                self.assertEqual(response.status_code, 302)
+                observation.refresh_from_db()
+                self.assertFalse(observation.photo)
+                self.assertFalse(replacement_path.exists())
+
+    def test_observation_photo_rejects_non_image_uploads(self):
+        self.login_as_owner()
+        response = self.client.post(
+            reverse("tracker:observation_add", args=[self.batch.pk]),
+            {
+                **self.observation_form_data(),
+                "photo": SimpleUploadedFile(
+                    "not-a-photo.jpg",
+                    b"This is not an image.",
+                    content_type="image/jpeg",
+                ),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Upload a valid image.",
+        )
+        self.assertFalse(self.batch.observations.exists())
 
     def test_entry_soft_delete_and_restore_are_owner_only_and_audited(self):
         addition = Addition.objects.create(

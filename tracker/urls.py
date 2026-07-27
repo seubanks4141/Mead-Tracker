@@ -56,6 +56,11 @@ urlpatterns = [
         name="observation_edit",
     ),
     path(
+        "observations/<uuid:pk>/photo/",
+        views.observation_photo,
+        name="observation_photo",
+    ),
+    path(
         "batches/<uuid:batch_pk>/status/",
         views.status_update,
         name="status_update",

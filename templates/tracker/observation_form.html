@@ -9,11 +9,26 @@
 {% block event_card_heading %}Observation{% endblock %}
 {% block submit_label %}{% if form.instance.pk %}Save changes{% else %}Add to journal{% endif %}{% endblock %}
 
+{% block event_after_fields %}
+  {% if form.instance.pk and form.instance.photo %}
+    <div class="current-observation-photo">
+      <div>
+        <strong>Current photo</strong>
+        <span>A replacement is saved only after you submit this form.</span>
+      </div>
+      <img
+        src="{% url 'tracker:observation_photo' form.instance.pk %}"
+        alt="Current photo for this observation"
+      >
+    </div>
+  {% endif %}
+{% endblock %}
+
 {% block event_aside %}
   <div class="tip-card">
     <span class="tip-card__icon" aria-hidden="true">✦</span>
     <h2>Specific beats perfect</h2>
-    <p>Useful notes can be simple: airlock pace, color, clarity, aroma, flavor, temperature, or the reason you made a change.</p>
+    <p>Useful notes can be simple: airlock pace, color, clarity, aroma, flavor, temperature, or the reason you made a change. Add a photo when the visual details matter.</p>
     <p class="tip-card__example">Example: <strong>Bright citrus aroma; fermentation visibly slower than yesterday.</strong></p>
   </div>
 {% endblock %}

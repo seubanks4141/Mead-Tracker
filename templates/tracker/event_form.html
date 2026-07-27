@@ -19,7 +19,12 @@
     </div>
   </header>
 
-  <form method="post" class="editor-layout editor-layout--event" novalidate>
+  <form
+    method="post"
+    class="editor-layout editor-layout--event"
+    {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}
+    novalidate
+  >
     {% csrf_token %}
     <section class="form-card" aria-labelledby="event-fields-heading">
       <div class="form-card__heading">
@@ -31,6 +36,8 @@
       </div>
 
       {% include "tracker/includes/form_fields.html" %}
+
+      {% block event_after_fields %}{% endblock %}
 
       <div class="form-actions">
         <a class="button button--ghost" href="{% url 'tracker:batch_detail' batch.pk %}">Cancel</a>

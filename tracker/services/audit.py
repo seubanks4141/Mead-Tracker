@@ -7,6 +7,7 @@ import uuid
 from decimal import Decimal
 
 from django.db import models
+from django.db.models.fields.files import FieldFile
 
 from tracker.models import AuditLog, Batch
 
@@ -14,6 +15,8 @@ from tracker.models import AuditLog, Batch
 def _json_value(value):
     if isinstance(value, (dt.date, dt.datetime, dt.time, Decimal, uuid.UUID)):
         return str(value)
+    if isinstance(value, FieldFile):
+        return value.name
     if isinstance(value, models.Model):
         return str(value.pk)
     return value

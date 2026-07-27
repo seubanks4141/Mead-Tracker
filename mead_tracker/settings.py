@@ -142,6 +142,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = "media/"
+media_root = Path(
+    os.getenv("MEAD_TRACKER_MEDIA_ROOT", str(BASE_DIR / "media"))
+).expanduser()
+if not media_root.is_absolute():
+    media_root = (BASE_DIR / media_root).resolve()
+MEDIA_ROOT = media_root
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",

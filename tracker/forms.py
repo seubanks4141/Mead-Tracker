@@ -191,9 +191,14 @@ class GravityReadingForm(StyledFormMixin, forms.ModelForm):
 
 
 class ObservationForm(StyledFormMixin, forms.ModelForm):
+    remove_photo = forms.BooleanField(
+        required=False,
+        label="Remove current photo",
+    )
+
     class Meta:
         model = Observation
-        fields = ("observed_at", "category", "text")
+        fields = ("observed_at", "category", "text", "photo")
         widgets = {
             "observed_at": LocalDateTimeInput(),
             "text": forms.Textarea(
@@ -202,11 +207,35 @@ class ObservationForm(StyledFormMixin, forms.ModelForm):
                     "placeholder": "Record aromas, flavor, appearance, activity, or anything else you notice.",
                 }
             ),
+            "photo": forms.FileInput(
+                attrs={"accept": "image/jpeg,image/png,image/webp"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["observed_at"].input_formats = ("%Y-%m-%dT%H:%M",)
+        if not self.instance.pk or not self.instance.photo:
+            self.fields.pop("remove_photo")
+
+    def clean(self):
+        cleaned = super().clean()
+        uploaded_photo = self.files.get(self.add_prefix("photo"))
+        if cleaned.get("remove_photo") and uploaded_photo:
+            self.add_error(
+                "remove_photo",
+                "Choose either a replacement photo or remove the current photo.",
+            )
+        return cleaned
+
+    def save(self, commit=True):
+        observation = super().save(commit=False)
+        if self.cleaned_data.get("remove_photo"):
+            observation.photo = None
+        if commit:
+            observation.save()
+            self.save_m2m()
+        return observation
 
 
 class BatchStatusForm(StyledFormMixin, forms.ModelForm):
