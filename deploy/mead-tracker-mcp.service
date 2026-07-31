@@ -1,0 +1,28 @@
+[Unit]
+Description=Mead Tracker authenticated MCP service
+Requires=mead-tracker.service
+After=network.target mead-tracker.service
+PartOf=mead-tracker.service
+
+[Service]
+Type=simple
+User=meadtracker
+Group=meadtracker
+WorkingDirectory=/opt/mead-tracker
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=/etc/mead-tracker/mead-tracker.env
+StateDirectory=mead-tracker
+UMask=0027
+
+ExecStart=/opt/mead-tracker/.venv/bin/python /opt/mead-tracker/run_mcp_server.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

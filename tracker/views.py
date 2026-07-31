@@ -45,6 +45,7 @@ from .models import (
 )
 from .services.audit import changes_between, record_audit, snapshot
 from .services.backups import BackupError, create_backup_bytes
+from .services.batch_context import get_owned_batch_context
 from .services.labels import render_label_pdf
 from .services.presentation import (
     build_activity,
@@ -991,82 +992,14 @@ def batch_trash(request, pk):
 
 @login_required
 def batch_export(request, pk):
-    batch = _owned_batch(request.user, pk)
-
-    def addition_data(item):
-        return {
-            "id": item.pk,
-            "kind": item.kind,
-            "name": item.name,
-            "quantity": item.quantity,
-            "unit": item.unit,
-            "custom_unit": item.custom_unit,
-            "phase": item.phase,
-            "added_at": item.added_at,
-            "notes": item.notes,
-        }
-
-    def gravity_data(item):
-        return {
-            "id": item.pk,
-            "specific_gravity": item.specific_gravity,
-            "reading_type": item.reading_type,
-            "measured_at": item.measured_at,
-            "recorded_at": item.recorded_at,
-            "sample_temperature": item.sample_temperature,
-            "temperature_unit": item.temperature_unit,
-            "method": item.method,
-            "notes": item.notes,
-        }
-
-    def observation_data(item):
-        return {
-            "id": item.pk,
-            "observed_at": item.observed_at,
-            "recorded_at": item.recorded_at,
-            "category": item.category,
-            "text": item.text,
-        }
-
-    payload = {
-        "format": "mead-tracker-batch",
-        "version": 1,
-        "exported_at": timezone.now(),
-        "batch": {
-            "id": batch.pk,
-            "name": batch.name,
-            "batch_number": batch.batch_number,
-            "style": batch.style,
-            "start_date": batch.start_date,
-            "fermentation_started_at": batch.fermentation_started_at,
-            "target_fermentation_sg": batch.target_fermentation_sg,
-            "planned_conditioning_days": batch.planned_conditioning_days,
-            "status": batch.status,
-            "volume": batch.volume,
-            "volume_unit": batch.volume_unit,
-            "vessel": batch.vessel,
-            "description": batch.description,
-            "additions": [addition_data(item) for item in batch.additions.all()],
-            "gravity_readings": [
-                gravity_data(item) for item in batch.gravity_readings.all()
-            ],
-            "observations": [
-                observation_data(item) for item in batch.observations.all()
-            ],
-            "status_history": [
-                {
-                    "status": item.status,
-                    "changed_at": item.changed_at,
-                    "notes": item.notes,
-                }
-                for item in batch.status_history.all()
-            ],
-        },
-    }
+    try:
+        payload = get_owned_batch_context(owner=request.user, batch_id=pk)
+    except Batch.DoesNotExist as exc:
+        raise Http404("Batch not found.") from exc
     contents = json.dumps(payload, cls=DjangoJSONEncoder, indent=2)
     response = HttpResponse(contents, content_type="application/json")
     response["Content-Disposition"] = (
-        f'attachment; filename="mead-batch-{batch.pk}.json"'
+        f'attachment; filename="mead-batch-{pk}.json"'
     )
     return response
 

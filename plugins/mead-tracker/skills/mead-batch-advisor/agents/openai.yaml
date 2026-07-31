@@ -1,0 +1,7 @@
+interface:
+  display_name: "Mead Batch Advisor"
+  short_description: "Review live Mead Tracker batch data"
+  default_prompt: "Use $mead-batch-advisor to review my current batch and suggest what to do next."
+
+policy:
+  allow_implicit_invocation: true

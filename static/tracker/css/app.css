@@ -3288,7 +3288,7 @@ h3 {
   font-size: 0.68rem;
 }
 
-.side-card--future {
+.side-card--assistant {
   overflow: hidden;
   background:
     radial-gradient(circle at 100% 0, rgba(236, 196, 127, 0.24), transparent 8rem),
@@ -3296,29 +3296,68 @@ h3 {
   border-color: #30231c;
 }
 
-.side-card--future h2 {
+.side-card--assistant h2 {
   margin: 0.65rem 0 0.5rem;
   color: var(--white);
   font-family: var(--font-display);
   font-size: 1.15rem;
 }
 
-.side-card--future h2 span {
+.side-card--assistant h2 > span {
   color: var(--amber-300);
 }
 
-.side-card--future p {
+.side-card--assistant > p {
   color: rgba(255, 255, 255, 0.61);
   font-size: 0.68rem;
 }
 
-.side-card--future .button[disabled] {
-  color: rgba(255, 255, 255, 0.48);
-  background: rgba(255, 255, 255, 0.06);
+.assistant-actions {
+  display: grid;
+  margin-top: 0.9rem;
+  gap: 0.55rem;
+}
+
+.side-card--assistant .button--ghost {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.side-card--assistant .button--ghost:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.side-card--assistant .button--ghost[disabled] {
+  color: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
-.future-tag {
+.assistant-copy-status {
+  min-height: 0.9rem;
+  margin: 0.45rem 0 0;
+  color: var(--amber-300) !important;
+  font-weight: 750;
+}
+
+.assistant-setup {
+  margin: 0.25rem 0 0;
+}
+
+.assistant-setup a {
+  color: var(--amber-300);
+  font-weight: 750;
+}
+
+.assistant-setup a:hover {
+  color: #f7deb0;
+}
+
+.assistant-tag {
   display: inline-flex;
   padding: 0.3rem 0.48rem;
   color: var(--amber-300);

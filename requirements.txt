@@ -18,3 +18,10 @@ pillow-heif==1.5.0
 # Loads local development settings from .env without overriding real
 # environment variables supplied by systemd, a shell, or a service manager.
 python-dotenv==1.2.2
+
+# OAuth 2.1 authorization-code + PKCE account linking for ChatGPT.
+django-oauth-toolkit==3.4.0
+
+# Read-only Model Context Protocol service used by the ChatGPT plugin.
+mcp==2.0.0
+uvicorn==0.52.0

@@ -1,0 +1,38 @@
+{
+  "name": "mead-tracker",
+  "version": "0.1.0",
+  "description": "Get read-only ChatGPT guidance grounded in current Mead Tracker batch records.",
+  "author": {
+    "name": "seubanks4141",
+    "url": "https://github.com/seubanks4141"
+  },
+  "homepage": "https://github.com/seubanks4141/Mead-Tracker",
+  "repository": "https://github.com/seubanks4141/Mead-Tracker",
+  "keywords": [
+    "mead",
+    "fermentation",
+    "brewing",
+    "batch tracking"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mead Tracker",
+    "shortDescription": "Review current mead batches with ChatGPT",
+    "longDescription": "Connect your Mead Tracker account and get read-only, batch-aware guidance using the latest recipe, additions, gravity readings, status history, and journal notes.",
+    "developerName": "seubanks4141",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://github.com/seubanks4141/Mead-Tracker",
+    "defaultPrompt": [
+      "Review my current mead batch and flag anything unusual.",
+      "Summarize my latest batch changes and suggest next steps.",
+      "Check my batch's gravity trend and identify anything needing attention."
+    ],
+    "brandColor": "#AA6819",
+    "composerIcon": "./assets/mark.svg",
+    "logo": "./assets/mark.svg",
+    "screenshots": []
+  }
+}

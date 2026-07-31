@@ -566,12 +566,45 @@
         <a class="button button--secondary button--wide" href="{% url 'tracker:label' batch.pk %}">Create a label</a>
       </section>
 
-      <section class="side-card side-card--future" aria-labelledby="assistant-heading">
-        <span class="future-tag">Planned update</span>
-        <h2 id="assistant-heading"><span aria-hidden="true">✦</span> Mead assistant</h2>
-        <p>Ask questions using this batch’s recipe, readings, and journal as context.</p>
-        <button class="button button--ghost button--wide" type="button" disabled>Coming later</button>
+      {% if chatgpt_enabled %}
+      <section class="side-card side-card--assistant" aria-labelledby="assistant-heading">
+        <span class="assistant-tag">Uses your ChatGPT plan</span>
+        <h2 id="assistant-heading"><span aria-hidden="true">✦</span> Ask about this batch</h2>
+        <p>
+          Get an opinion using the latest recipe, readings, additions, and journal.
+          Those batch details are sent to ChatGPT; the Mead connection is read-only.
+        </p>
+        <span id="assistant-prompt-{{ batch.pk }}" hidden>
+          Use the Mead Tracker plugin to review batch ID {{ batch.pk }}.
+          Fetch its latest complete batch context before answering. Start by summarizing its
+          current state, then flag concerns and suggest next steps.
+        </span>
+        <div class="assistant-actions">
+          <button
+            class="button button--ghost button--wide"
+            type="button"
+            data-copy-prompt="assistant-prompt-{{ batch.pk }}"
+          >
+            <span data-copy-label>Copy batch prompt</span>
+          </button>
+          <a
+            class="button button--primary button--wide"
+            href="https://chatgpt.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open ChatGPT
+          </a>
+        </div>
+        <p class="assistant-copy-status" data-copy-status aria-live="polite"></p>
+        <p class="assistant-setup">
+          First time?
+          <a href="https://chatgpt.com/plugins" target="_blank" rel="noopener noreferrer">
+            Connect Mead Tracker in ChatGPT Plugins
+          </a>.
+        </p>
       </section>
+      {% endif %}
     </aside>
   </div>
 

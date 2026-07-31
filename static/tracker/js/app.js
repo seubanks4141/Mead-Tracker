@@ -160,6 +160,71 @@
     });
   });
 
+  const legacyCopyText = (text) => {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.inset = "0 auto auto 0";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand("copy");
+    field.remove();
+    return copied;
+  };
+
+  const copyText = async (text) => {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch (_error) {
+        // Fall back for browsers that expose Clipboard but deny this page access.
+      }
+    }
+    if (!legacyCopyText(text)) throw new Error("Clipboard access is unavailable.");
+  };
+
+  $$("[data-copy-prompt]").forEach((button) => {
+    const source = document.getElementById(button.dataset.copyPrompt);
+    const card = button.closest(".side-card--assistant");
+    const status = card ? $("[data-copy-status]", card) : null;
+    const label = $("[data-copy-label]", button);
+    const originalLabel = label ? label.textContent : button.textContent;
+    let resetTimer;
+
+    button.addEventListener("click", async () => {
+      const prompt = source ? source.textContent.replace(/\s+/g, " ").trim() : "";
+      window.clearTimeout(resetTimer);
+
+      if (!prompt) {
+        if (status) status.textContent = "The batch prompt is unavailable.";
+        return;
+      }
+
+      button.disabled = true;
+      try {
+        await copyText(prompt);
+        if (label) label.textContent = "Copied";
+        else button.textContent = "Copied";
+        if (status) status.textContent = "Batch prompt copied.";
+      } catch (_error) {
+        if (status) {
+          status.textContent =
+            "Copy failed. In ChatGPT, ask Mead Tracker to list your batches and choose this one.";
+        }
+      } finally {
+        resetTimer = window.setTimeout(() => {
+          if (label) label.textContent = originalLabel;
+          else button.textContent = originalLabel;
+          button.disabled = false;
+          if (status) status.textContent = "";
+        }, 3000);
+      }
+    });
+  });
+
   $$("[data-password-toggle]").forEach((button) => {
     const field = button.closest(".password-field");
     const input = field ? $("input", field) : null;

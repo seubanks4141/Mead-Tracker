@@ -16,6 +16,7 @@ ENV_FILE="$ENV_DIR/mead-tracker.env"
 STATE_DIR="/var/lib/mead-tracker"
 INSTALL_MARKER="$ENV_DIR/.setup-complete"
 SERVICE_NAME="mead-tracker.service"
+MCP_SERVICE="mead-tracker-mcp.service"
 BACKUP_SERVICE="mead-tracker-backup.service"
 BACKUP_TIMER="mead-tracker-backup.timer"
 INSTALLED_SCRIPT="/usr/local/sbin/mead-tracker-deploy"
@@ -34,6 +35,7 @@ timer_should_enable=0
 timer_stopped=0
 app_stopped=0
 backup_created=0
+chatgpt_enabled=false
 
 log() {
     printf '%s\n' "[mead-tracker] $*"
@@ -93,10 +95,11 @@ cleanup() {
         printf '%s\n' \
             "[mead-tracker] FAILED during phase: $phase" >&2
         if [ "$app_stopped" -eq 1 ]; then
+            systemctl stop "$MCP_SERVICE" >/dev/null 2>&1 || true
             systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
             printf '%s\n' \
-                "[mead-tracker] The web service and backup timer remain stopped." \
-                "[mead-tracker] Review: journalctl -u $SERVICE_NAME -n 100 --no-pager" >&2
+                "[mead-tracker] The web, MCP, and backup services remain stopped." \
+                "[mead-tracker] Review: journalctl -u $SERVICE_NAME -u $MCP_SERVICE -n 100 --no-pager" >&2
             if [ "$backup_created" -eq 1 ]; then
                 printf '%s\n' \
                     "[mead-tracker] A verified pre-update backup was kept." >&2
@@ -293,6 +296,7 @@ validate_repository() {
     for privileged_source in \
         "$APP_DIR/deploy/mead-tracker.sh" \
         "$APP_DIR/deploy/mead-tracker.service" \
+        "$APP_DIR/deploy/mead-tracker-mcp.service" \
         "$APP_DIR/deploy/mead-tracker-backup.service" \
         "$APP_DIR/deploy/mead-tracker-backup.timer"
     do
@@ -443,6 +447,15 @@ MEAD_TRACKER_DB_PATH=$STATE_DIR/mead-tracker.sqlite3
 MEAD_TRACKER_BACKUP_DIR=$STATE_DIR/backups
 MEAD_TRACKER_MEDIA_ROOT=$STATE_DIR/media
 MEAD_TRACKER_PUBLIC_BASE_URL=http://$setup_address:$setup_port
+
+# Keep ChatGPT disabled until public HTTPS MCP and OAuth endpoints are ready.
+MEAD_TRACKER_CHATGPT_ENABLED=false
+MEAD_TRACKER_MCP_HOST=127.0.0.1
+MEAD_TRACKER_MCP_PORT=8766
+MEAD_TRACKER_MCP_PUBLIC_URL=
+MEAD_TRACKER_OAUTH_ISSUER_URL=
+MEAD_TRACKER_CHATGPT_CLIENT_ID=mead-tracker-chatgpt
+MEAD_TRACKER_CHATGPT_CALLBACK_URL=
 EOF
     install \
         -o root \
@@ -471,6 +484,9 @@ install_systemd_units() {
     install -o root -g root -m 0644 \
         "$APP_DIR/deploy/mead-tracker.service" \
         "/etc/systemd/system/$SERVICE_NAME"
+    install -o root -g root -m 0644 \
+        "$APP_DIR/deploy/mead-tracker-mcp.service" \
+        "/etc/systemd/system/$MCP_SERVICE"
     install -o root -g root -m 0644 \
         "$APP_DIR/deploy/mead-tracker-backup.service" \
         "/etc/systemd/system/$BACKUP_SERVICE"
@@ -520,6 +536,75 @@ configured_public_url() {
     ' sh "$ENV_FILE"
 }
 
+configured_chatgpt_enabled() {
+    configured_value="$(
+        run_as_app sh -c '
+            set -a
+            . "$1"
+            set +a
+            printf "%s" "${MEAD_TRACKER_CHATGPT_ENABLED:-false}"
+        ' sh "$ENV_FILE"
+    )" || die "Could not read MEAD_TRACKER_CHATGPT_ENABLED from $ENV_FILE."
+    case "$configured_value" in
+        true|false) printf '%s' "$configured_value" ;;
+        *) die "MEAD_TRACKER_CHATGPT_ENABLED must be true or false." ;;
+    esac
+}
+
+configured_chatgpt_callback_url() {
+    run_as_app sh -c '
+        set -a
+        . "$1"
+        set +a
+        printf "%s" "${MEAD_TRACKER_CHATGPT_CALLBACK_URL:-}"
+    ' sh "$ENV_FILE"
+}
+
+configured_mcp_health_url() {
+    run_as_app sh -c '
+        set -a
+        . "$1"
+        set +a
+        "$2" -c '"'"'
+import os
+from urllib.parse import urlparse
+
+host = os.environ.get("MEAD_TRACKER_MCP_HOST", "127.0.0.1").strip().strip("[]")
+port = int(os.environ.get("MEAD_TRACKER_MCP_PORT", "8766"))
+resource_path = urlparse(
+    os.environ.get("MEAD_TRACKER_MCP_PUBLIC_URL", "")
+).path or "/mcp"
+display_host = f"[{host}]" if ":" in host else host
+print(
+    f"http://{display_host}:{port}"
+    f"/.well-known/oauth-protected-resource{resource_path}"
+)
+'"'"'
+    ' sh "$ENV_FILE" "$VENV_PYTHON"
+}
+
+validate_mcp_configuration() {
+    [ "$chatgpt_enabled" = "true" ] || return
+    phase="validating ChatGPT MCP and OAuth configuration"
+    run_with_env "$VENV_PYTHON" -c \
+        'from run_mcp_server import load_application; load_application()'
+}
+
+configure_chatgpt_oauth_client() {
+    [ "$chatgpt_enabled" = "true" ] || return
+    chatgpt_callback_url="$(configured_chatgpt_callback_url)" \
+        || die "Could not read MEAD_TRACKER_CHATGPT_CALLBACK_URL from $ENV_FILE."
+    if [ -z "$chatgpt_callback_url" ]; then
+        phase="clearing ChatGPT OAuth state for discovery-only startup"
+        run_with_env "$VENV_PYTHON" manage.py configure_chatgpt_oauth \
+            --discovery-only
+        log "ChatGPT callback is not assigned; starting MCP in discovery-only bootstrap mode."
+        return
+    fi
+    phase="configuring ChatGPT OAuth client"
+    run_with_env "$VENV_PYTHON" manage.py configure_chatgpt_oauth
+}
+
 check_health() {
     phase="checking application health"
     health_port="$(configured_port)"
@@ -555,6 +640,60 @@ check_health() {
     die "The application did not pass its health check."
 }
 
+check_mcp_health() {
+    phase="checking MCP service health"
+    mcp_health_url="$(configured_mcp_health_url)" \
+        || die "Could not resolve the configured MCP health URL."
+    mcp_health_attempt=0
+    while [ "$mcp_health_attempt" -lt 20 ]; do
+        if systemctl is-active --quiet "$MCP_SERVICE"; then
+            mcp_health_status="$(
+                curl \
+                    --silent \
+                    --output /dev/null \
+                    --write-out '%{http_code}' \
+                    --max-time 2 \
+                    "$mcp_health_url" \
+                    2>/dev/null || true
+            )"
+            if [ "$mcp_health_status" = "200" ]; then
+                sleep 1
+                if systemctl is-active --quiet "$MCP_SERVICE"; then
+                    log "MCP health check passed at $mcp_health_url."
+                    return
+                fi
+            fi
+        fi
+        mcp_health_attempt=$((mcp_health_attempt + 1))
+        sleep 1
+    done
+
+    systemctl status "$MCP_SERVICE" --no-pager || true
+    journalctl -u "$MCP_SERVICE" -n 100 --no-pager || true
+    die "The enabled MCP service did not pass its health check."
+}
+
+stop_mcp_if_running() {
+    if systemctl is-active --quiet "$MCP_SERVICE" 2>/dev/null; then
+        systemctl stop "$MCP_SERVICE"
+    fi
+}
+
+reconcile_mcp_service() {
+    if [ "$chatgpt_enabled" = "true" ]; then
+        phase="enabling ChatGPT MCP service"
+        systemctl enable "$MCP_SERVICE"
+        systemctl reset-failed "$MCP_SERVICE" >/dev/null 2>&1 || true
+        systemctl restart "$MCP_SERVICE"
+        check_mcp_health
+    else
+        phase="keeping ChatGPT MCP service disabled"
+        systemctl stop "$MCP_SERVICE" >/dev/null 2>&1 || true
+        systemctl disable "$MCP_SERVICE" >/dev/null 2>&1 || true
+        log "ChatGPT integration is disabled; the MCP service is stopped."
+    fi
+}
+
 create_verified_backup() {
     phase="creating verified database backup"
     systemctl reset-failed "$BACKUP_SERVICE" >/dev/null 2>&1 || true
@@ -587,6 +726,9 @@ setup_application() {
         if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
             die "Mead Tracker is already running; use update instead of setup."
         fi
+        if systemctl is-active --quiet "$MCP_SERVICE" 2>/dev/null; then
+            die "Mead Tracker MCP is already running; use update instead of setup."
+        fi
         log "Resuming an incomplete setup and preserving $ENV_FILE."
     fi
 
@@ -594,6 +736,7 @@ setup_application() {
     ensure_virtual_environment
     install_python_dependencies
     ensure_environment_file
+    chatgpt_enabled="$(configured_chatgpt_enabled)"
     ensure_state_directories
     install_systemd_units
 
@@ -605,6 +748,9 @@ setup_application() {
     app_stopped=1
     systemctl restart "$SERVICE_NAME"
     check_health
+    configure_chatgpt_oauth_client
+    validate_mcp_configuration
+    reconcile_mcp_service
     app_stopped=0
 
     phase="enabling daily backups"
@@ -629,6 +775,7 @@ update_application() {
     getent group "$APP_GROUP" >/dev/null 2>&1 \
         || die "Service group not found: $APP_GROUP"
     [ -f "$ENV_FILE" ] || die "Configuration not found: $ENV_FILE"
+    chatgpt_enabled="$(configured_chatgpt_enabled)"
     validate_repository
 
     phase="fetching $BRANCH"
@@ -673,8 +820,9 @@ update_application() {
         # Use the current, known-working release to back up before code moves.
         create_verified_backup
 
-        phase="stopping the web service"
+        phase="stopping application services"
         app_stopped=1
+        stop_mcp_if_running
         systemctl stop "$SERVICE_NAME"
         validate_repository
         stopped_sha="$(git -C "$APP_DIR" rev-parse HEAD)"
@@ -696,8 +844,9 @@ update_application() {
         # A previous attempt may have fast-forwarded before dependencies or
         # units were ready. Reconcile those pieces before taking a fresh
         # pre-migration backup and starting the service again.
-        phase="stopping the web service for reconciliation"
+        phase="stopping application services for reconciliation"
         app_stopped=1
+        stop_mcp_if_running
         systemctl stop "$SERVICE_NAME"
         validate_repository
         install_python_dependencies
@@ -712,6 +861,9 @@ update_application() {
     phase="starting updated application"
     systemctl start "$SERVICE_NAME"
     check_health
+    configure_chatgpt_oauth_client
+    validate_mcp_configuration
+    reconcile_mcp_service
     app_stopped=0
 
     if [ "$timer_should_enable" -eq 1 ]; then
