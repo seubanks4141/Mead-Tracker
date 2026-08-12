@@ -584,14 +584,14 @@ print(
 }
 
 validate_mcp_configuration() {
-    [ "$chatgpt_enabled" = "true" ] || return
+    [ "$chatgpt_enabled" = "true" ] || return 0
     phase="validating ChatGPT MCP and OAuth configuration"
     run_with_env "$VENV_PYTHON" -c \
         'from run_mcp_server import load_application; load_application()'
 }
 
 configure_chatgpt_oauth_client() {
-    [ "$chatgpt_enabled" = "true" ] || return
+    [ "$chatgpt_enabled" = "true" ] || return 0
     chatgpt_callback_url="$(configured_chatgpt_callback_url)" \
         || die "Could not read MEAD_TRACKER_CHATGPT_CALLBACK_URL from $ENV_FILE."
     if [ -z "$chatgpt_callback_url" ]; then

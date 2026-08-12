@@ -87,8 +87,14 @@ class DeploymentScriptTests(SimpleTestCase):
             script,
         )
         self.assertIn(
-            '[ "$chatgpt_enabled" = "true" ] || return',
+            '[ "$chatgpt_enabled" = "true" ] || return 0',
             script,
+        )
+        self.assertEqual(
+            script.count(
+                '[ "$chatgpt_enabled" = "true" ] || return 0'
+            ),
+            2,
         )
         self.assertIn(
             "from run_mcp_server import load_application; load_application()",
@@ -128,6 +134,37 @@ class DeploymentScriptTests(SimpleTestCase):
         self.assertEqual(script.count("stop_mcp_if_running\n"), 2)
         self.assertIn("MEAD_TRACKER_MCP_HOST=127.0.0.1", script)
         self.assertIn("MEAD_TRACKER_MCP_PORT=8766", script)
+
+    def test_disabled_chatgpt_guards_return_success(self):
+        shell = shutil.which("sh")
+        if shell is None:
+            self.skipTest("No POSIX shell is available on this host.")
+
+        script = DEPLOY_SCRIPT.read_text(encoding="utf-8")
+
+        def function_source(name: str) -> str:
+            marker = f"{name}() {{"
+            body = script.split(marker, 1)[1].split("\n}\n", 1)[0]
+            return f"{marker}{body}\n}}\n"
+
+        probe = "\n".join(
+            (
+                "set -eu",
+                "chatgpt_enabled=false",
+                function_source("validate_mcp_configuration"),
+                function_source("configure_chatgpt_oauth_client"),
+                "validate_mcp_configuration",
+                "configure_chatgpt_oauth_client",
+            )
+        )
+        result = subprocess.run(
+            [shell],
+            input=probe,
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_environment_examples_document_public_https_oauth_and_mcp(self):
         for env_path in (LOCAL_ENV_EXAMPLE, DEPLOY_ENV_EXAMPLE):
