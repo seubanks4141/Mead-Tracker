@@ -682,6 +682,12 @@ class TrackerIntegrationTests(TestCase):
                 )
                 self.assertContains(detail_response, photo_url, count=2)
                 self.assertContains(detail_response, 'loading="lazy"')
+                self.assertContains(detail_response, "data-photo-lightbox-trigger")
+                self.assertContains(detail_response, "data-photo-lightbox")
+                self.assertContains(
+                    detail_response,
+                    'aria-controls="observation-photo-lightbox"',
+                )
 
                 photo_response = self.client.get(photo_url)
                 self.assertEqual(photo_response.status_code, 200)

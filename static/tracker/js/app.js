@@ -315,6 +315,51 @@
     printButton.addEventListener("click", () => window.print());
   }
 
+  const photoLightbox = $("[data-photo-lightbox]");
+  const photoLightboxImage = photoLightbox
+    ? $("[data-photo-lightbox-image]", photoLightbox)
+    : null;
+  const photoLightboxCaption = photoLightbox
+    ? $("[data-photo-lightbox-caption]", photoLightbox)
+    : null;
+  const photoLightboxClose = photoLightbox
+    ? $("[data-photo-lightbox-close]", photoLightbox)
+    : null;
+
+  if (
+    photoLightbox
+    && photoLightboxImage
+    && typeof photoLightbox.showModal === "function"
+  ) {
+    $$('[data-photo-lightbox-trigger]').forEach((trigger) => {
+      trigger.addEventListener("click", (event) => {
+        const thumbnail = $("img", trigger);
+        const description = thumbnail && thumbnail.alt
+          ? thumbnail.alt
+          : "Observation photo";
+
+        event.preventDefault();
+        photoLightboxImage.src = trigger.href;
+        photoLightboxImage.alt = description;
+        if (photoLightboxCaption) photoLightboxCaption.textContent = description;
+        photoLightbox.showModal();
+      });
+    });
+
+    if (photoLightboxClose) {
+      photoLightboxClose.addEventListener("click", () => photoLightbox.close());
+    }
+
+    photoLightbox.addEventListener("click", (event) => {
+      if (event.target === photoLightbox) photoLightbox.close();
+    });
+
+    photoLightbox.addEventListener("close", () => {
+      photoLightboxImage.removeAttribute("src");
+      photoLightboxImage.alt = "";
+    });
+  }
+
   const labelForm = $("[data-label-options]");
   if (labelForm) {
     const preset = $('[name="preset"]', labelForm);

@@ -2944,26 +2944,131 @@ h3 {
 }
 
 .journal-entry__photo {
+  position: relative;
   display: block;
-  max-width: 38rem;
+  width: 10rem;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
   margin-top: 0.9rem;
   overflow: hidden;
   background: var(--paper-deep);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
+  cursor: zoom-in;
 }
 
 .journal-entry__photo img {
   display: block;
   width: 100%;
-  max-height: 36rem;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 160ms ease;
+}
+
+.journal-entry__photo:hover img {
+  transform: scale(1.035);
+}
+
+.journal-entry__photo-action {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.4rem;
+  padding: 0.28rem 0.45rem;
+  color: #fff;
+  background: rgba(31, 22, 17, 0.78);
+  border-radius: 99px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
 .journal-entry__photo:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--amber-500) 40%, transparent);
   outline-offset: 3px;
+}
+
+.photo-lightbox {
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  color: var(--ink-800);
+  background: transparent;
+  border: 0;
+}
+
+.photo-lightbox::backdrop {
+  background: rgba(18, 12, 9, 0.86);
+  backdrop-filter: blur(3px);
+}
+
+.photo-lightbox__content {
+  position: relative;
+  display: grid;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  margin: 0;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.38);
+}
+
+.photo-lightbox__content img {
+  display: block;
+  width: auto;
+  max-width: min(92vw, 80rem);
+  height: auto;
+  max-height: calc(100vh - 6rem);
+  margin: auto;
+  object-fit: contain;
+}
+
+.photo-lightbox__content figcaption {
+  padding: 0.7rem 1rem;
+  overflow: hidden;
+  color: var(--ink-600);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-lightbox__close {
+  position: absolute;
+  z-index: 1;
+  top: 0.65rem;
+  right: 0.65rem;
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  color: #fff;
+  background: rgba(31, 22, 17, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  place-items: center;
+}
+
+.photo-lightbox__close:hover {
+  background: rgba(31, 22, 17, 0.94);
+}
+
+.photo-lightbox__close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--amber-400) 65%, white);
+  outline-offset: 2px;
+}
+
+body:has(.photo-lightbox[open]) {
+  overflow: hidden;
 }
 
 .current-observation-photo {

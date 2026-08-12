@@ -426,7 +426,10 @@
                     <a
                       class="journal-entry__photo"
                       href="{% url 'tracker:observation_photo' observation.pk %}"
+                      aria-controls="observation-photo-lightbox"
+                      aria-haspopup="dialog"
                       aria-label="Open the photo attached to this observation"
+                      data-photo-lightbox-trigger
                     >
                       <img
                         src="{% url 'tracker:observation_photo' observation.pk %}"
@@ -434,6 +437,7 @@
                         loading="lazy"
                         decoding="async"
                       >
+                      <span class="journal-entry__photo-action" aria-hidden="true">Expand</span>
                     </a>
                   {% endif %}
                   {% if observation.updated_at and observation.updated_at != observation.created_at %}
@@ -443,6 +447,28 @@
               </li>
             {% endfor %}
           </ol>
+
+          <dialog
+            class="photo-lightbox"
+            id="observation-photo-lightbox"
+            aria-labelledby="observation-photo-lightbox-title"
+            data-photo-lightbox
+          >
+            <figure class="photo-lightbox__content">
+              <button
+                class="photo-lightbox__close"
+                type="button"
+                aria-label="Close expanded photo"
+                data-photo-lightbox-close
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <img alt="" data-photo-lightbox-image>
+              <figcaption id="observation-photo-lightbox-title" data-photo-lightbox-caption>
+                Observation photo
+              </figcaption>
+            </figure>
+          </dialog>
         {% else %}
           <div class="section-empty">
             <span aria-hidden="true">✎</span>
