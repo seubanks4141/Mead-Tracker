@@ -20,6 +20,23 @@ MUTED = HexColor("#65756c")
 ACCENT = HexColor("#bd7834")
 PAPER = HexColor("#fffdf7")
 
+AVERY_PRESTA_94051 = "avery-presta-94051"
+AVERY_94051_COLUMNS = 3
+AVERY_94051_ROWS = 6
+AVERY_94051_LABELS_PER_SHEET = AVERY_94051_COLUMNS * AVERY_94051_ROWS
+AVERY_94051_WIDTH = 2.5 * inch
+AVERY_94051_HEIGHT = 1.5 * inch
+AVERY_94051_SIDE_MARGIN = 0.37 * inch
+AVERY_94051_TOP_MARGIN = 0.625 * inch
+
+BORDER_COLORS = {
+    "amber": HexColor("#9b5a1a"),
+    "forest": HexColor("#315e45"),
+    "burgundy": HexColor("#7a3040"),
+    "navy": HexColor("#334e68"),
+    "charcoal": HexColor("#3f4642"),
+}
+
 
 @dataclass(frozen=True)
 class LabelSpec:
@@ -124,6 +141,62 @@ def _draw_qr(
     renderPDF.draw(drawing, pdf, x, y)
 
 
+def _draw_decorative_border(
+    pdf: canvas.Canvas,
+    *,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    shape: str,
+    border_style: str,
+    border_color: str,
+) -> None:
+    if border_style == "none":
+        return
+
+    color = BORDER_COLORS.get(border_color, BORDER_COLORS["amber"])
+    outer_inset = max(3.5, min(width, height) * 0.04)
+
+    def draw_outline(inset: float) -> None:
+        outline_x = x + inset
+        outline_y = y + inset
+        outline_width = width - inset * 2
+        outline_height = height - inset * 2
+        if shape == "oval":
+            pdf.ellipse(
+                outline_x,
+                outline_y,
+                outline_x + outline_width,
+                outline_y + outline_height,
+                stroke=1,
+                fill=0,
+            )
+        else:
+            radius = min(8.0, outline_width * 0.04, outline_height * 0.04)
+            pdf.roundRect(
+                outline_x,
+                outline_y,
+                outline_width,
+                outline_height,
+                radius,
+                stroke=1,
+                fill=0,
+            )
+
+    pdf.saveState()
+    pdf.setStrokeColor(color)
+    pdf.setLineWidth(1.0)
+    if border_style == "dotted":
+        pdf.setLineCap(1)
+        pdf.setDash(0.5, 2.8)
+    draw_outline(outer_inset)
+    if border_style == "double":
+        pdf.setLineWidth(0.65)
+        draw_outline(outer_inset + max(3.0, min(width, height) * 0.035))
+    pdf.restoreState()
+
+
 def _draw_one_label(
     pdf: canvas.Canvas,
     *,
@@ -135,6 +208,8 @@ def _draw_one_label(
     height: float,
     include_batch_number: bool,
     show_cut_line: bool,
+    border_style: str,
+    border_color: str,
 ) -> None:
     pdf.saveState()
     if show_cut_line:
@@ -151,6 +226,16 @@ def _draw_one_label(
         height - (1 if show_cut_line else 0),
         stroke=0,
         fill=1,
+    )
+    _draw_decorative_border(
+        pdf,
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        shape="rectangle",
+        border_style=border_style,
+        border_color=border_color,
     )
 
     available = width - inset * 2
@@ -195,6 +280,119 @@ def _draw_one_label(
     pdf.restoreState()
 
 
+def _draw_avery_94051_label(
+    pdf: canvas.Canvas,
+    *,
+    batch,
+    qr_url: str,
+    x: float,
+    y: float,
+    include_batch_number: bool,
+    border_style: str,
+    border_color: str,
+) -> None:
+    """Draw the compact landscape design inside one 94051 oval."""
+
+    width = AVERY_94051_WIDTH
+    height = AVERY_94051_HEIGHT
+    pdf.saveState()
+    _draw_decorative_border(
+        pdf,
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        shape="oval",
+        border_style=border_style,
+        border_color=border_color,
+    )
+
+    text_x = x + 0.30 * inch
+    text_width = 0.86 * inch
+    name_size = 10.5
+    name_lines = _wrap_name(batch.name, text_width, name_size)
+    top = y + height - 0.42 * inch
+
+    pdf.setFillColor(BORDER_COLORS.get(border_color, BORDER_COLORS["amber"]))
+    pdf.setFont("Helvetica-Bold", 5.5)
+    pdf.drawString(text_x, top, "HANDCRAFTED MEAD")
+
+    pdf.setFillColor(INK)
+    pdf.setFont("Helvetica-Bold", name_size)
+    name_y = top - 13
+    for line in name_lines:
+        pdf.drawString(text_x, name_y, line)
+        name_y -= name_size * 1.03
+
+    pdf.setFillColor(MUTED)
+    pdf.setFont("Helvetica", 6.3)
+    pdf.drawString(text_x, name_y - 1.5, f"Started {_portable_started_date(batch)}")
+    if include_batch_number and batch.batch_number:
+        pdf.setFont("Helvetica-Bold", 5.5)
+        pdf.drawString(text_x, name_y - 10, f"Batch {batch.batch_number}")
+
+    qr_size = 0.68 * inch
+    qr_x = x + 1.25 * inch
+    qr_y = y + (height - qr_size) / 2 + 3
+    _draw_qr(pdf, qr_url, x=qr_x, y=qr_y, size=qr_size)
+
+    pdf.setFillColor(INK)
+    pdf.setFont("Helvetica-Bold", 5.2)
+    caption = "SCAN"
+    caption_width = stringWidth(caption, "Helvetica-Bold", 5.2)
+    pdf.drawString(qr_x + (qr_size - caption_width) / 2, y + 0.25 * inch, caption)
+    pdf.restoreState()
+
+
+def _draw_avery_94051_sheet(
+    pdf: canvas.Canvas,
+    *,
+    batch,
+    qr_url: str,
+    copies: int,
+    include_batch_number: bool,
+    border_style: str,
+    border_color: str,
+) -> None:
+    page_width, page_height = letter
+    horizontal_gap = (
+        page_width
+        - AVERY_94051_SIDE_MARGIN * 2
+        - AVERY_94051_COLUMNS * AVERY_94051_WIDTH
+    ) / (AVERY_94051_COLUMNS - 1)
+    vertical_gap = (
+        page_height
+        - AVERY_94051_TOP_MARGIN * 2
+        - AVERY_94051_ROWS * AVERY_94051_HEIGHT
+    ) / (AVERY_94051_ROWS - 1)
+
+    for copy_index in range(copies):
+        slot = copy_index % AVERY_94051_LABELS_PER_SHEET
+        if slot == 0 and copy_index:
+            pdf.showPage()
+        row = slot // AVERY_94051_COLUMNS
+        column = slot % AVERY_94051_COLUMNS
+        x = AVERY_94051_SIDE_MARGIN + column * (
+            AVERY_94051_WIDTH + horizontal_gap
+        )
+        y = (
+            page_height
+            - AVERY_94051_TOP_MARGIN
+            - AVERY_94051_HEIGHT
+            - row * (AVERY_94051_HEIGHT + vertical_gap)
+        )
+        _draw_avery_94051_label(
+            pdf,
+            batch=batch,
+            qr_url=qr_url,
+            x=x,
+            y=y,
+            include_batch_number=include_batch_number,
+            border_style=border_style,
+            border_color=border_color,
+        )
+
+
 def _portable_started_date(batch) -> str:
     """Return a date without platform-specific strftime modifiers."""
 
@@ -211,6 +409,9 @@ def render_label_pdf(
     copies: int,
     output_mode: str,
     include_batch_number: bool,
+    label_preset: str = "",
+    border_style: str = "classic",
+    border_color: str = "amber",
 ) -> bytes:
     """Render exact-size labels or a generic cut-it-yourself Letter sheet."""
 
@@ -218,13 +419,23 @@ def render_label_pdf(
     label_height = to_points(height, dimension_unit)
     stream = BytesIO()
 
-    if output_mode == "letter":
+    if output_mode == "letter" or label_preset == AVERY_PRESTA_94051:
         page_width, page_height = letter
     else:
         page_width, page_height = label_width, label_height
 
     pdf = canvas.Canvas(stream, pagesize=(page_width, page_height))
-    if output_mode == "letter":
+    if label_preset == AVERY_PRESTA_94051:
+        _draw_avery_94051_sheet(
+            pdf,
+            batch=batch,
+            qr_url=qr_url,
+            copies=copies,
+            include_batch_number=include_batch_number,
+            border_style=border_style,
+            border_color=border_color,
+        )
+    elif output_mode == "letter":
         margin = 0.25 * inch
         gap = 0.125 * inch
         columns = max(1, floor((page_width - margin * 2 + gap) / (label_width + gap)))
@@ -253,6 +464,8 @@ def render_label_pdf(
                 height=label_height,
                 include_batch_number=include_batch_number,
                 show_cut_line=True,
+                border_style=border_style,
+                border_color=border_color,
             )
     else:
         for copy_index in range(copies):
@@ -268,6 +481,8 @@ def render_label_pdf(
                 height=label_height,
                 include_batch_number=include_batch_number,
                 show_cut_line=False,
+                border_style=border_style,
+                border_color=border_color,
             )
     pdf.save()
 

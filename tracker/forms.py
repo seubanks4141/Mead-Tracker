@@ -319,19 +319,50 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
     PRESET_2_5_X_3 = "2.5x3"
     PRESET_3_X_4 = "3x4"
     PRESET_3_333_X_4 = "3.333x4"
+    PRESET_AVERY_PRESTA_94051 = "avery-presta-94051"
     PRESET_CUSTOM = "custom"
+
+    BORDER_CLASSIC = "classic"
+    BORDER_DOUBLE = "double"
+    BORDER_DOTTED = "dotted"
+    BORDER_NONE = "none"
+
+    BORDER_AMBER = "amber"
+    BORDER_FOREST = "forest"
+    BORDER_BURGUNDY = "burgundy"
+    BORDER_NAVY = "navy"
+    BORDER_CHARCOAL = "charcoal"
 
     PRESET_CHOICES = (
         (PRESET_3_X_4, '3 × 4 inches'),
         (PRESET_2_5_X_3, '2½ × 3 inches'),
         (PRESET_3_333_X_4, '3⅓ × 4 inches'),
+        (
+            PRESET_AVERY_PRESTA_94051,
+            'Avery Presta® 94051 — 18 oval labels',
+        ),
         (PRESET_CUSTOM, "Custom size"),
     )
     PRESET_DIMENSIONS = {
         PRESET_2_5_X_3: (Decimal("2.500"), Decimal("3.000")),
         PRESET_3_X_4: (Decimal("3.000"), Decimal("4.000")),
         PRESET_3_333_X_4: (Decimal("3.333"), Decimal("4.000")),
+        PRESET_AVERY_PRESTA_94051: (Decimal("2.500"), Decimal("1.500")),
     }
+
+    BORDER_STYLE_CHOICES = (
+        (BORDER_CLASSIC, "Classic border"),
+        (BORDER_DOUBLE, "Double border"),
+        (BORDER_DOTTED, "Dotted border"),
+        (BORDER_NONE, "No border"),
+    )
+    BORDER_COLOR_CHOICES = (
+        (BORDER_AMBER, "Honey amber"),
+        (BORDER_FOREST, "Forest green"),
+        (BORDER_BURGUNDY, "Burgundy"),
+        (BORDER_NAVY, "Deep navy"),
+        (BORDER_CHARCOAL, "Charcoal"),
+    )
 
     preset = forms.ChoiceField(choices=PRESET_CHOICES, initial=PRESET_3_X_4)
     width = forms.DecimalField(
@@ -356,15 +387,41 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         choices=LabelPrintLog.OutputMode.choices,
         initial=LabelPrintLog.OutputMode.SINGLE,
     )
-    copies = forms.IntegerField(min_value=1, max_value=100, initial=1)
+    copies = forms.IntegerField(
+        min_value=1,
+        max_value=100,
+        initial=1,
+        help_text=(
+            "Avery sheets fill from the top left and continue onto another sheet "
+            "after 18 labels."
+        ),
+    )
     include_batch_number = forms.BooleanField(required=False, initial=True)
+    border_style = forms.ChoiceField(
+        choices=BORDER_STYLE_CHOICES,
+        initial=BORDER_CLASSIC,
+        required=False,
+    )
+    border_color = forms.ChoiceField(
+        choices=BORDER_COLOR_CHOICES,
+        initial=BORDER_AMBER,
+        required=False,
+    )
 
     def clean(self):
         cleaned = super().clean()
         preset = cleaned.get("preset")
+        cleaned["border_style"] = (
+            cleaned.get("border_style") or self.BORDER_CLASSIC
+        )
+        cleaned["border_color"] = (
+            cleaned.get("border_color") or self.BORDER_AMBER
+        )
         if preset in self.PRESET_DIMENSIONS:
             cleaned["width"], cleaned["height"] = self.PRESET_DIMENSIONS[preset]
             cleaned["dimension_unit"] = LabelPrintLog.DimensionUnit.INCH
+            if preset == self.PRESET_AVERY_PRESTA_94051:
+                cleaned["output_mode"] = LabelPrintLog.OutputMode.LETTER_SHEET
             return cleaned
 
         width = cleaned.get("width")

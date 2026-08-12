@@ -995,6 +995,70 @@ class TrackerIntegrationTests(TestCase):
         self.assertEqual(invalid_response.status_code, 400)
         self.assertEqual(LabelPrintLog.objects.filter(batch=self.batch).count(), 1)
 
+    def test_avery_94051_preview_and_sheet_pdf(self):
+        self.login_as_owner()
+        options = {
+            "preset": "avery-presta-94051",
+            "dimension_unit": "mm",
+            "output_mode": "single",
+            "copies": "19",
+            "include_batch_number": "on",
+            "border_style": "double",
+            "border_color": "forest",
+        }
+
+        preview = self.client.get(
+            reverse("tracker:label", args=[self.batch.pk]),
+            options,
+        )
+        self.assertEqual(preview.status_code, 200)
+        self.assertEqual(preview.context["label_width"], Decimal("2.500"))
+        self.assertEqual(preview.context["label_height"], Decimal("1.500"))
+        self.assertTrue(preview.context["label_is_avery_94051"])
+        self.assertEqual(preview.context["label_orientation"], "landscape")
+        self.assertContains(preview, "Avery Presta® 94051")
+        self.assertContains(preview, "mead-label--avery-94051")
+        self.assertContains(preview, "mead-label--border-double")
+        self.assertContains(preview, "--label-border-color: #315e45")
+        self.assertContains(preview, "Summer Solstice")
+        self.assertContains(preview, "Jun 21, 2026")
+        self.assertContains(
+            preview,
+            reverse("tracker:qr_svg", args=[self.batch.pk]),
+        )
+
+        response = self.client.get(
+            reverse("tracker:label_pdf", args=[self.batch.pk]),
+            options,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.content.startswith(b"%PDF-"))
+        media_boxes = re.findall(
+            rb"/MediaBox\s*\[\s*([0-9.]+)\s+([0-9.]+)\s+"
+            rb"([0-9.]+)\s+([0-9.]+)\s*\]",
+            response.content,
+        )
+        self.assertTrue(media_boxes)
+        self.assertTrue(
+            all(
+                tuple(float(value) for value in media_box)
+                == (0.0, 0.0, 612.0, 792.0)
+                for media_box in media_boxes
+            )
+        )
+        self.assertEqual(
+            len(re.findall(rb"/Type\s*/Page(?!s)", response.content)),
+            2,
+        )
+
+        print_log = LabelPrintLog.objects.get(batch=self.batch)
+        self.assertEqual(print_log.label_preset, "avery-presta-94051")
+        self.assertEqual(print_log.width, Decimal("2.500"))
+        self.assertEqual(print_log.height, Decimal("1.500"))
+        self.assertEqual(print_log.dimension_unit, "in")
+        self.assertEqual(print_log.output_mode, "letter")
+        self.assertEqual(print_log.copies, 19)
+
     def test_json_export_contains_active_batch_history_and_entries(self):
         BatchStatusHistory.objects.create(
             batch=self.batch,

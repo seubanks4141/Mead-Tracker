@@ -336,6 +336,53 @@ def _base_url_warning(qr_url: str) -> str:
     return ""
 
 
+LABEL_BORDER_COLOR_VALUES = {
+    LabelSizeForm.BORDER_AMBER: "#9b5a1a",
+    LabelSizeForm.BORDER_FOREST: "#315e45",
+    LabelSizeForm.BORDER_BURGUNDY: "#7a3040",
+    LabelSizeForm.BORDER_NAVY: "#334e68",
+    LabelSizeForm.BORDER_CHARCOAL: "#3f4642",
+}
+
+
+def _label_preview_context(form: LabelSizeForm) -> dict:
+    values = {
+        "preset": LabelSizeForm.PRESET_3_X_4,
+        "width": LabelSizeForm.PRESET_DIMENSIONS[
+            LabelSizeForm.PRESET_3_X_4
+        ][0],
+        "height": LabelSizeForm.PRESET_DIMENSIONS[
+            LabelSizeForm.PRESET_3_X_4
+        ][1],
+        "dimension_unit": LabelPrintLog.DimensionUnit.INCH,
+        "border_style": LabelSizeForm.BORDER_CLASSIC,
+        "border_color": LabelSizeForm.BORDER_AMBER,
+    }
+    if form.is_bound and not form.errors:
+        values.update(form.cleaned_data)
+
+    width = values["width"]
+    height = values["height"]
+    preset = values["preset"]
+    border_color = values["border_color"]
+    return {
+        "label_width": width,
+        "label_height": height,
+        "label_aspect_ratio": float(width / height),
+        "label_orientation": "landscape" if width > height else "portrait",
+        "label_is_avery_94051": (
+            preset == LabelSizeForm.PRESET_AVERY_PRESTA_94051
+        ),
+        "label_border_style": values["border_style"],
+        "label_border_color": border_color,
+        "label_border_color_value": LABEL_BORDER_COLOR_VALUES.get(
+            border_color,
+            LABEL_BORDER_COLOR_VALUES[LabelSizeForm.BORDER_AMBER],
+        ),
+        "label_dimension_unit": values["dimension_unit"],
+    }
+
+
 def _batch_context(batch: Batch) -> dict:
     active_additions = list(
         batch.additions.order_by("added_at", "recorded_at")
@@ -850,14 +897,6 @@ def label(request, pk):
     form = LabelSizeForm(request.GET or None)
     if request.GET:
         form.is_valid()
-    preview_values = (
-        form.cleaned_data
-        if form.is_bound and not form.errors
-        else {
-            "width": LabelSizeForm.PRESET_DIMENSIONS[LabelSizeForm.PRESET_3_X_4][0],
-            "height": LabelSizeForm.PRESET_DIMENSIONS[LabelSizeForm.PRESET_3_X_4][1],
-        }
-    )
     return render(
         request,
         "tracker/label.html",
@@ -865,13 +904,9 @@ def label(request, pk):
             "batch": batch,
             "form": form,
             "label_form": form,
-            "label_width": preview_values["width"],
-            "label_height": preview_values["height"],
-            "label_aspect_ratio": float(
-                preview_values["width"] / preview_values["height"]
-            ),
             "qr_url": qr_url,
             "base_url_warning": _base_url_warning(qr_url),
+            **_label_preview_context(form),
         },
     )
 
@@ -921,6 +956,7 @@ def label_pdf(request, pk):
                 "label_form": form,
                 "qr_url": qr_url,
                 "base_url_warning": _base_url_warning(qr_url),
+                **_label_preview_context(form),
             },
             status=400,
         )
@@ -935,6 +971,9 @@ def label_pdf(request, pk):
         copies=values["copies"],
         output_mode=values["output_mode"],
         include_batch_number=values["include_batch_number"],
+        label_preset=values["preset"],
+        border_style=values["border_style"],
+        border_color=values["border_color"],
     )
     LabelPrintLog.objects.create(
         batch=batch,

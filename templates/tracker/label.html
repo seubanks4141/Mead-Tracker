@@ -49,7 +49,11 @@
 
       <div class="print-note">
         <span aria-hidden="true">i</span>
-        <p><strong>For accurate sizing</strong> Choose “Actual size” or “100%” in the print dialog. Do not use “Fit to page.”</p>
+        <p>
+          <strong>For accurate sizing</strong>
+          Choose “Actual size” or “100%” in the print dialog. Do not use “Fit to page.”
+          {% if label_is_avery_94051 %}The 94051 preset fills positions from the top left, 18 labels per sheet.{% endif %}
+        </p>
       </div>
     </section>
 
@@ -57,26 +61,37 @@
       <div class="label-preview-panel__heading">
         <div>
           <div class="eyebrow">Live preview</div>
-          <h2 id="label-preview-heading">{{ label_width|default:"3" }} × {{ label_height|default:"4" }} inches</h2>
+          <h2 id="label-preview-heading">
+            {% if label_is_avery_94051 %}
+              Avery Presta® 94051 · 2½ × 1½ inches
+            {% else %}
+              {{ label_width|default:"3" }} × {{ label_height|default:"4" }} {% if label_dimension_unit == "mm" %}mm{% else %}inches{% endif %}
+            {% endif %}
+          </h2>
         </div>
         <span>PDF output may be sharper than this screen preview</span>
       </div>
 
       <div class="label-stage">
         <article
-          class="mead-label mead-label--{{ label_orientation|default:'portrait' }}"
-          style="--label-ratio: {{ label_aspect_ratio|default:'0.75' }};"
+          class="mead-label mead-label--{{ label_orientation|default:'portrait' }} mead-label--border-{{ label_border_style|default:'classic' }} mead-label--color-{{ label_border_color|default:'amber' }}{% if label_is_avery_94051 %} mead-label--avery-94051{% endif %}"
+          style="--label-ratio: {{ label_aspect_ratio|default:'0.75' }}; --label-border-color: {{ label_border_color_value|default:'#9b5a1a' }};"
           aria-label="Preview of label for {{ batch.name }}"
         >
-          <div class="mead-label__rule"></div>
-          <div class="mead-label__ornament" aria-hidden="true">✦</div>
-          <p class="mead-label__kicker">Handcrafted mead</p>
-          <h3>{{ batch.name }}</h3>
-          {% if batch.style %}<p class="mead-label__style">{{ batch.style }}</p>{% endif %}
-          <div class="mead-label__qr">
-            <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+          <div class="mead-label__border" aria-hidden="true"></div>
+          <div class="mead-label__identity">
+            <div class="mead-label__rule"></div>
+            <div class="mead-label__ornament" aria-hidden="true">✦</div>
+            <p class="mead-label__kicker">Handcrafted mead</p>
+            <h3>{{ batch.name }}</h3>
+            {% if batch.style %}<p class="mead-label__style">{{ batch.style }}</p>{% endif %}
           </div>
-          <p class="mead-label__scan">Scan for batch notes</p>
+          <div class="mead-label__qr-block">
+            <div class="mead-label__qr">
+              <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+            </div>
+            <p class="mead-label__scan">Scan for batch notes</p>
+          </div>
           <div class="mead-label__footer">
             <span>Started</span>
             <strong>
@@ -94,7 +109,7 @@
           form="label-options-form"
           formaction="{% url 'tracker:label_pdf' batch.pk %}"
         >
-          <span aria-hidden="true">↧</span> Download PDF
+          <span aria-hidden="true">↧</span> Download {% if label_is_avery_94051 %}Avery sheet {% endif %}PDF
         </button>
         <button class="button button--ghost" type="button" data-print-page>
           <span aria-hidden="true">▧</span> Print preview

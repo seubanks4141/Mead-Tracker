@@ -4611,6 +4611,7 @@ body:has(.photo-lightbox[open]) {
 }
 
 .mead-label {
+  --label-border-color: #9b5a1a;
   position: relative;
   display: flex;
   width: min(100%, calc(24rem * var(--label-ratio)));
@@ -4629,12 +4630,39 @@ body:has(.photo-lightbox[open]) {
   text-align: center;
 }
 
+.mead-label__border {
+  position: absolute;
+  z-index: 1;
+  border: 2px solid var(--label-border-color);
+  inset: 0.55rem;
+  pointer-events: none;
+}
+
+.mead-label--border-double .mead-label__border {
+  border-style: double;
+  border-width: 5px;
+}
+
+.mead-label--border-dotted .mead-label__border {
+  border-style: dotted;
+  border-width: 3px;
+}
+
+.mead-label--border-none .mead-label__border {
+  display: none;
+}
+
+.mead-label__identity,
+.mead-label__qr-block {
+  display: contents;
+}
+
 .mead-label::before,
 .mead-label::after {
   position: absolute;
   width: 5rem;
   height: 5rem;
-  border: 1px solid rgba(138, 79, 14, 0.22);
+  border: 1px solid var(--label-border-color);
   border-radius: 50%;
   content: "";
 }
@@ -4654,7 +4682,7 @@ body:has(.photo-lightbox[open]) {
   height: 3px;
   margin-bottom: 0.55rem;
   background:
-    linear-gradient(90deg, transparent, var(--amber-600) 18% 82%, transparent);
+    linear-gradient(90deg, transparent, var(--label-border-color) 18% 82%, transparent);
 }
 
 .mead-label__ornament {
@@ -4741,6 +4769,105 @@ body:has(.photo-lightbox[open]) {
 
 .mead-label--landscape .mead-label__qr {
   width: 28%;
+}
+
+.mead-label--avery-94051 {
+  display: grid;
+  width: min(100%, 34rem);
+  min-width: 22rem;
+  padding: 1.4rem 2.6rem 1.3rem;
+  background:
+    radial-gradient(circle at 34% 48%, rgba(236, 196, 127, 0.2), transparent 9rem),
+    #fffdf5;
+  border-radius: 50%;
+  column-gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) minmax(5rem, 0.62fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  text-align: left;
+}
+
+.mead-label--avery-94051::before,
+.mead-label--avery-94051::after {
+  display: none;
+}
+
+.mead-label--avery-94051 .mead-label__border {
+  border-radius: 50%;
+  inset: 0.42rem;
+}
+
+.mead-label--avery-94051 .mead-label__identity {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  flex-direction: column;
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: center;
+}
+
+.mead-label--avery-94051 .mead-label__rule {
+  width: 70%;
+  height: 2px;
+  margin-bottom: 0.25rem;
+}
+
+.mead-label--avery-94051 .mead-label__ornament {
+  display: none;
+}
+
+.mead-label--avery-94051 .mead-label__kicker {
+  margin: 0.2rem 0 0.35rem;
+  color: var(--label-border-color);
+  font-size: 0.48rem;
+}
+
+.mead-label--avery-94051 h3 {
+  margin-bottom: 0.15rem;
+  font-size: clamp(1.15rem, 3.5vw, 1.65rem);
+  line-height: 0.98;
+}
+
+.mead-label--avery-94051 .mead-label__style {
+  margin: 0;
+  font-size: 0.56rem;
+}
+
+.mead-label--avery-94051 .mead-label__qr-block {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  align-self: center;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
+
+.mead-label--avery-94051 .mead-label__qr,
+.mead-label--landscape.mead-label--avery-94051 .mead-label__qr {
+  width: min(100%, 6.2rem);
+  padding: 0.25rem;
+}
+
+.mead-label--avery-94051 .mead-label__scan {
+  margin-bottom: 0;
+  text-align: center;
+}
+
+.mead-label--avery-94051 .mead-label__footer {
+  width: auto;
+  padding-top: 0.35rem;
+  margin-top: 0.4rem;
+  align-self: end;
+  border-color: var(--label-border-color);
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: stretch;
+  text-align: left;
+}
+
+.mead-label--avery-94051 .mead-label__footer > span {
+  color: var(--label-border-color);
 }
 
 .label-actions {
@@ -6621,6 +6748,18 @@ html[data-theme="dark"] textarea::placeholder {
 
   .mead-label {
     min-width: 13rem;
+  }
+
+  .mead-label--avery-94051 {
+    min-width: 17rem;
+    padding: 1rem 1.8rem 0.9rem;
+    column-gap: 0.55rem;
+    grid-template-columns: minmax(0, 1fr) minmax(4.1rem, 0.6fr);
+  }
+
+  .mead-label--avery-94051 .mead-label__qr,
+  .mead-label--landscape.mead-label--avery-94051 .mead-label__qr {
+    width: min(100%, 4.8rem);
   }
 
   .label-actions {

@@ -364,15 +364,20 @@
   if (labelForm) {
     const preset = $('[name="preset"]', labelForm);
     const customFields = [$(".field--width", labelForm), $(".field--height", labelForm)].filter(Boolean);
+    const outputMode = $('[name="output_mode"]', labelForm);
+    const outputModeField = $(".field--output_mode", labelForm);
 
     const syncCustomFields = () => {
       const custom = preset && preset.value === "custom";
+      const avery94051 = preset && preset.value === "avery-presta-94051";
       customFields.forEach((field) => {
         field.hidden = !custom;
         $$("input, select", field).forEach((input) => {
           input.disabled = !custom;
         });
       });
+      if (outputMode && avery94051) outputMode.value = "letter";
+      if (outputModeField) outputModeField.hidden = avery94051;
     };
 
     if (preset) {
