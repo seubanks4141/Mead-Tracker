@@ -1006,6 +1006,7 @@ class TrackerIntegrationTests(TestCase):
             "include_batch_number": "on",
             "border_style": "double",
             "border_color": "forest",
+            "design_style": "premium",
         }
 
         preview = self.client.get(
@@ -1018,12 +1019,15 @@ class TrackerIntegrationTests(TestCase):
         self.assertTrue(preview.context["label_is_avery_94051"])
         self.assertEqual(preview.context["label_orientation"], "landscape")
         self.assertEqual(preview.context["label_start_position"], 5)
+        self.assertEqual(preview.context["label_design_style"], "premium")
+        self.assertEqual(preview.context["label_design_name"], "F - Premium midnight")
         self.assertContains(preview, "Avery Presta® 94051")
         self.assertContains(preview, "mead-label--avery-94051")
         self.assertContains(preview, "mead-label__avery-copy")
         self.assertContains(preview, "mead-label__avery-date")
         self.assertNotContains(preview, "mead-label__footer")
         self.assertContains(preview, "mead-label--border-double")
+        self.assertContains(preview, "mead-label--design-premium")
         self.assertContains(preview, "--label-border-color: #315e45")
         self.assertContains(preview, "begins at position 5")
         self.assertContains(preview, 'name="start_position"')
@@ -1074,6 +1078,48 @@ class TrackerIntegrationTests(TestCase):
             {**options, "start_position": "19"},
         )
         self.assertEqual(invalid_start.status_code, 400)
+
+    def test_all_avery_designs_are_selectable_and_honeycomb_is_default(self):
+        self.login_as_owner()
+        url = reverse("tracker:label", args=[self.batch.pk])
+        base_options = {
+            "preset": "avery-presta-94051",
+            "dimension_unit": "in",
+            "output_mode": "letter",
+            "copies": "1",
+            "start_position": "1",
+        }
+
+        default_preview = self.client.get(url, base_options)
+        self.assertEqual(default_preview.status_code, 200)
+        self.assertEqual(
+            default_preview.context["label_design_style"],
+            "honeycomb",
+        )
+        self.assertContains(default_preview, "mead-label--design-honeycomb")
+
+        for design_style in (
+            "minimal",
+            "modern",
+            "botanical",
+            "apothecary",
+            "honeycomb",
+            "premium",
+        ):
+            with self.subTest(design_style=design_style):
+                preview = self.client.get(
+                    url,
+                    {**base_options, "design_style": design_style},
+                )
+                self.assertEqual(preview.status_code, 200)
+                self.assertEqual(
+                    preview.context["label_design_style"],
+                    design_style,
+                )
+                self.assertContains(
+                    preview,
+                    f"mead-label--design-{design_style}",
+                )
 
     def test_json_export_contains_active_batch_history_and_entries(self):
         BatchStatusHistory.objects.create(

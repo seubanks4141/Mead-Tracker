@@ -68,18 +68,22 @@
               {{ label_width|default:"3" }} × {{ label_height|default:"4" }} {% if label_dimension_unit == "mm" %}mm{% else %}inches{% endif %}
             {% endif %}
           </h2>
+          {% if label_is_avery_94051 %}<p class="label-preview-panel__design">{{ label_design_name }}</p>{% endif %}
         </div>
         <span>PDF output may be sharper than this screen preview</span>
       </div>
 
       <div class="label-stage">
         <article
-          class="mead-label mead-label--{{ label_orientation|default:'portrait' }} mead-label--border-{{ label_border_style|default:'classic' }} mead-label--color-{{ label_border_color|default:'amber' }}{% if label_is_avery_94051 %} mead-label--avery-94051{% endif %}"
+          class="mead-label mead-label--{{ label_orientation|default:'portrait' }} mead-label--border-{{ label_border_style|default:'classic' }} mead-label--color-{{ label_border_color|default:'amber' }}{% if label_is_avery_94051 %} mead-label--avery-94051 mead-label--design-{{ label_design_style|default:'honeycomb' }}{% endif %}"
           style="--label-ratio: {{ label_aspect_ratio|default:'0.75' }}; --label-border-color: {{ label_border_color_value|default:'#9b5a1a' }};"
           aria-label="Preview of label for {{ batch.name }}"
         >
           <div class="mead-label__border" aria-hidden="true"></div>
           {% if label_is_avery_94051 %}
+            <div class="mead-label__theme-art" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
             <div class="mead-label__avery-copy">
               <p class="mead-label__kicker">Handcrafted mead</p>
               <h3>{{ batch.name }}</h3>

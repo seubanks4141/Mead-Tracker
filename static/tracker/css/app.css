@@ -4590,6 +4590,15 @@ body:has(.photo-lightbox[open]) {
   font-size: 1.35rem;
 }
 
+.label-preview-panel__design {
+  margin: 0.25rem 0 0;
+  color: var(--amber-700);
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .label-preview-panel__heading > span {
   color: var(--ink-500);
   font-size: 0.62rem;
@@ -4812,8 +4821,8 @@ body:has(.photo-lightbox[open]) {
   position: absolute;
   z-index: 2;
   top: 21%;
-  left: 12%;
-  width: 35%;
+  left: 14%;
+  width: 41%;
 }
 
 .mead-label--avery-94051 .mead-label__kicker {
@@ -4856,9 +4865,9 @@ body:has(.photo-lightbox[open]) {
   position: absolute;
   z-index: 2;
   top: 24.5%;
-  left: 50%;
+  left: 62.8%;
   display: block;
-  width: 27.2%;
+  width: 25.6%;
   align-items: center;
   text-align: center;
 }
@@ -4878,6 +4887,190 @@ body:has(.photo-lightbox[open]) {
   letter-spacing: 0;
   text-align: center;
 }
+
+.mead-label--avery-94051 .mead-label__theme-art {
+  position: absolute;
+  z-index: 0;
+  overflow: hidden;
+  background: #fff8e8;
+  border-radius: 50%;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mead-label--avery-94051 .mead-label__theme-art i {
+  position: absolute;
+  display: none;
+}
+
+.mead-label--avery-94051.mead-label--design-minimal {
+  color: #2b211b;
+}
+
+.mead-label--design-minimal .mead-label__theme-art {
+  background: #fffaf0;
+}
+
+.mead-label--design-minimal .mead-label__theme-art::before,
+.mead-label--design-minimal .mead-label__theme-art::after {
+  position: absolute;
+  width: 25%;
+  height: 1px;
+  background: var(--label-border-color);
+  content: "";
+}
+
+.mead-label--design-minimal .mead-label__theme-art::before {
+  top: 22%;
+  left: 14%;
+}
+
+.mead-label--design-minimal .mead-label__theme-art::after {
+  right: 14%;
+  bottom: 22%;
+}
+
+.mead-label--design-minimal h3,
+.mead-label--design-botanical h3,
+.mead-label--design-apothecary h3,
+.mead-label--design-premium h3 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.mead-label--avery-94051.mead-label--design-modern {
+  color: #fff;
+}
+
+.mead-label--design-modern .mead-label__theme-art {
+  background: linear-gradient(90deg, #252827 0 69%, var(--label-border-color) 69% 100%);
+}
+
+.mead-label--design-modern .mead-label__theme-art::after {
+  position: absolute;
+  top: 25%;
+  left: 13%;
+  width: 15%;
+  height: 3px;
+  background: var(--label-border-color);
+  content: "";
+}
+
+.mead-label--design-modern .mead-label__kicker,
+.mead-label--design-modern .mead-label__avery-date,
+.mead-label--design-modern .mead-label__avery-batch,
+.mead-label--design-modern .mead-label__scan,
+.mead-label--design-premium .mead-label__avery-date,
+.mead-label--design-premium .mead-label__avery-batch,
+.mead-label--design-premium .mead-label__scan {
+  color: #fff;
+}
+
+.mead-label--design-botanical .mead-label__theme-art {
+  background: #fbf7e9;
+}
+
+.mead-label--design-botanical .mead-label__theme-art i {
+  display: block;
+  width: 11%;
+  height: 3.5%;
+  border: 1px solid var(--label-border-color);
+  border-radius: 50%;
+}
+
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(1) { top: 30%; left: 0; transform: rotate(45deg); }
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(2) { top: 43%; left: 3%; transform: rotate(-32deg); }
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(3) { top: 57%; left: 5%; transform: rotate(45deg); }
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(4) { top: 35%; right: 0; transform: rotate(-42deg); }
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(5) { top: 49%; right: 3%; transform: rotate(34deg); }
+.mead-label--design-botanical .mead-label__theme-art i:nth-child(6) { top: 62%; right: 5%; transform: rotate(-42deg); }
+
+.mead-label--design-botanical .mead-label__theme-art::before,
+.mead-label--design-botanical .mead-label__theme-art::after {
+  position: absolute;
+  width: 1px;
+  height: 54%;
+  background: var(--label-border-color);
+  content: "";
+}
+
+.mead-label--design-botanical .mead-label__theme-art::before { top: 22%; left: 7%; transform: rotate(-12deg); }
+.mead-label--design-botanical .mead-label__theme-art::after { top: 22%; right: 7%; transform: rotate(12deg); }
+
+.mead-label--design-apothecary .mead-label__theme-art {
+  background: #f4ead4;
+}
+
+.mead-label--design-apothecary .mead-label__theme-art::before,
+.mead-label--design-apothecary .mead-label__theme-art::after {
+  position: absolute;
+  right: 13%;
+  left: 13%;
+  height: 1px;
+  background: var(--label-border-color);
+  content: "";
+}
+
+.mead-label--design-apothecary .mead-label__theme-art::before { top: 20%; }
+.mead-label--design-apothecary .mead-label__theme-art::after { bottom: 20%; }
+
+.mead-label--design-apothecary .mead-label__theme-art i {
+  display: block;
+  width: 1.8%;
+  aspect-ratio: 1;
+  background: #f4ead4;
+  border: 1px solid var(--label-border-color);
+  transform: rotate(45deg);
+}
+
+.mead-label--design-apothecary .mead-label__theme-art i:nth-child(1) { top: 17.5%; left: 48.8%; }
+.mead-label--design-apothecary .mead-label__theme-art i:nth-child(2) { bottom: 17.5%; left: 48.8%; }
+
+.mead-label--design-honeycomb .mead-label__theme-art {
+  background: #fff8e8;
+}
+
+.mead-label--design-honeycomb .mead-label__theme-art i {
+  display: block;
+  width: 7.2%;
+  aspect-ratio: 1 / 0.866;
+  background: var(--label-border-color);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+
+.mead-label--design-honeycomb .mead-label__theme-art i::after {
+  position: absolute;
+  background: #fff8e8;
+  clip-path: inherit;
+  content: "";
+  inset: 2px;
+}
+
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(1) { top: 17%; left: -3%; }
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(2) { top: 32%; left: 1%; }
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(3) { top: 47%; left: -3%; }
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(4) { right: -2%; bottom: 15%; }
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(5) { right: 2%; bottom: 30%; }
+.mead-label--design-honeycomb .mead-label__theme-art i:nth-child(6) { right: -2%; bottom: 45%; }
+
+.mead-label--avery-94051.mead-label--design-premium {
+  color: #fff;
+}
+
+.mead-label--design-premium .mead-label__theme-art {
+  background: #14283b;
+}
+
+.mead-label--design-premium .mead-label__theme-art::before,
+.mead-label--design-premium .mead-label__theme-art::after {
+  position: absolute;
+  width: 26%;
+  height: 1px;
+  background: var(--label-border-color);
+  content: "";
+}
+
+.mead-label--design-premium .mead-label__theme-art::before { top: 18%; left: 11%; }
+.mead-label--design-premium .mead-label__theme-art::after { right: 11%; bottom: 18%; }
 
 .label-actions {
   display: flex;

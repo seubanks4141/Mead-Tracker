@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 from io import BytesIO
-from math import floor
+from math import cos, floor, pi, sin
 
 from reportlab.graphics import renderPDF
 from reportlab.graphics.barcode.qr import QrCodeWidget
@@ -37,6 +37,21 @@ BORDER_COLORS = {
     "charcoal": HexColor("#3f4642"),
 }
 
+DESIGN_MINIMAL = "minimal"
+DESIGN_MODERN = "modern"
+DESIGN_BOTANICAL = "botanical"
+DESIGN_APOTHECARY = "apothecary"
+DESIGN_HONEYCOMB = "honeycomb"
+DESIGN_PREMIUM = "premium"
+AVERY_94051_DESIGNS = {
+    DESIGN_MINIMAL,
+    DESIGN_MODERN,
+    DESIGN_BOTANICAL,
+    DESIGN_APOTHECARY,
+    DESIGN_HONEYCOMB,
+    DESIGN_PREMIUM,
+}
+
 
 @dataclass(frozen=True)
 class LabelSpec:
@@ -65,7 +80,12 @@ def _fit_text_size(
     return max(size, minimum)
 
 
-def _wrap_name(text: str, available_width: float, font_size: float) -> list[str]:
+def _wrap_name(
+    text: str,
+    available_width: float,
+    font_size: float,
+    font_name: str = "Helvetica-Bold",
+) -> list[str]:
     words = text.split()
     if not words:
         return ["Untitled mead"]
@@ -73,7 +93,7 @@ def _wrap_name(text: str, available_width: float, font_size: float) -> list[str]
     current = words[0]
     for word in words[1:]:
         candidate = f"{current} {word}"
-        if stringWidth(candidate, "Helvetica-Bold", font_size) <= available_width:
+        if stringWidth(candidate, font_name, font_size) <= available_width:
             current = candidate
         else:
             lines.append(current)
@@ -86,21 +106,21 @@ def _wrap_name(text: str, available_width: float, font_size: float) -> list[str]
     if consumed != text and len(lines) == 2:
         last = lines[-1]
         while last and stringWidth(
-            f"{last}…", "Helvetica-Bold", font_size
+            f"{last}...", font_name, font_size
         ) > available_width:
             last = last[:-1].rstrip()
-        lines[-1] = f"{last}…"
+        lines[-1] = f"{last}..."
     fitted_lines = []
     for line in lines[:2]:
-        if stringWidth(line, "Helvetica-Bold", font_size) <= available_width:
+        if stringWidth(line, font_name, font_size) <= available_width:
             fitted_lines.append(line)
             continue
         shortened = line
         while shortened and stringWidth(
-            f"{shortened}…", "Helvetica-Bold", font_size
+            f"{shortened}...", font_name, font_size
         ) > available_width:
             shortened = shortened[:-1]
-        fitted_lines.append(f"{shortened.rstrip()}…")
+        fitted_lines.append(f"{shortened.rstrip()}...")
     return fitted_lines
 
 
@@ -280,6 +300,188 @@ def _draw_one_label(
     pdf.restoreState()
 
 
+def _normalize_avery_design(design_style: str) -> str:
+    if design_style in AVERY_94051_DESIGNS:
+        return design_style
+    return DESIGN_HONEYCOMB
+
+
+def _avery_theme(design_style: str, border_color: str) -> dict:
+    design_style = _normalize_avery_design(design_style)
+    accent = BORDER_COLORS.get(border_color, BORDER_COLORS["amber"])
+    themes = {
+        DESIGN_MINIMAL: {
+            "background": HexColor("#fffaf0"),
+            "text": HexColor("#2b211b"),
+            "muted": HexColor("#73665d"),
+            "font": "Times-Bold",
+            "body_font": "Times-Roman",
+        },
+        DESIGN_MODERN: {
+            "background": HexColor("#252827"),
+            "text": white,
+            "muted": HexColor("#ddd8cd"),
+            "font": "Helvetica-Bold",
+            "body_font": "Helvetica",
+        },
+        DESIGN_BOTANICAL: {
+            "background": HexColor("#fbf7e9"),
+            "text": HexColor("#23392d"),
+            "muted": HexColor("#637067"),
+            "font": "Times-Bold",
+            "body_font": "Times-Roman",
+        },
+        DESIGN_APOTHECARY: {
+            "background": HexColor("#f4ead4"),
+            "text": HexColor("#3d2822"),
+            "muted": HexColor("#746158"),
+            "font": "Times-Bold",
+            "body_font": "Times-Roman",
+        },
+        DESIGN_HONEYCOMB: {
+            "background": HexColor("#fff8e8"),
+            "text": HexColor("#29231e"),
+            "muted": HexColor("#71675e"),
+            "font": "Helvetica-Bold",
+            "body_font": "Helvetica",
+        },
+        DESIGN_PREMIUM: {
+            "background": HexColor("#14283b"),
+            "text": white,
+            "muted": HexColor("#d6dde0"),
+            "font": "Times-Bold",
+            "body_font": "Times-Roman",
+        },
+    }
+    return {**themes[design_style], "design": design_style, "accent": accent}
+
+
+def _draw_hexagon(
+    pdf: canvas.Canvas,
+    center_x: float,
+    center_y: float,
+    radius: float,
+) -> None:
+    points = [
+        (
+            center_x + radius * cos(pi / 3 * index),
+            center_y + radius * sin(pi / 3 * index),
+        )
+        for index in range(6)
+    ]
+    path = pdf.beginPath()
+    path.moveTo(*points[0])
+    for point in points[1:]:
+        path.lineTo(*point)
+    path.close()
+    pdf.drawPath(path, stroke=1, fill=0)
+
+
+def _draw_leaf(
+    pdf: canvas.Canvas,
+    center_x: float,
+    center_y: float,
+    width: float,
+    height: float,
+    angle: float,
+) -> None:
+    pdf.saveState()
+    pdf.translate(center_x, center_y)
+    pdf.rotate(angle)
+    pdf.ellipse(-width / 2, -height / 2, width / 2, height / 2, stroke=1, fill=0)
+    pdf.restoreState()
+
+
+def _draw_avery_theme_art(
+    pdf: canvas.Canvas,
+    *,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    theme: dict,
+) -> None:
+    """Paint a theme inside the oval while keeping the surrounding sheet clean."""
+
+    design_style = theme["design"]
+    accent = theme["accent"]
+    pdf.saveState()
+    oval = pdf.beginPath()
+    oval.ellipse(x, y, width, height)
+    pdf.clipPath(oval, stroke=0, fill=0)
+    pdf.setFillColor(theme["background"])
+    pdf.rect(x, y, width, height, stroke=0, fill=1)
+    pdf.setStrokeColor(accent)
+    pdf.setFillColor(accent)
+
+    if design_style == DESIGN_MINIMAL:
+        pdf.setLineWidth(0.55)
+        pdf.line(x + width * 0.14, y + height * 0.78, x + width * 0.39, y + height * 0.78)
+        pdf.line(x + width * 0.61, y + height * 0.22, x + width * 0.86, y + height * 0.22)
+    elif design_style == DESIGN_MODERN:
+        pdf.rect(x + width * 0.69, y, width * 0.31, height, stroke=0, fill=1)
+        pdf.setLineWidth(2.2)
+        pdf.line(x + width * 0.13, y + height * 0.75, x + width * 0.28, y + height * 0.75)
+    elif design_style == DESIGN_BOTANICAL:
+        pdf.setLineWidth(0.65)
+        pdf.line(x + width * 0.02, y + height * 0.20, x + width * 0.11, y + height * 0.69)
+        pdf.line(x + width * 0.90, y + height * 0.72, x + width * 0.98, y + height * 0.34)
+        for leaf in (
+            (0.035, 0.35, 9, 4, 48),
+            (0.065, 0.47, 10, 4, -35),
+            (0.085, 0.58, 9, 4, 48),
+            (0.925, 0.61, 9, 4, 36),
+            (0.95, 0.50, 10, 4, -48),
+            (0.975, 0.40, 9, 4, 36),
+        ):
+            _draw_leaf(
+                pdf,
+                x + width * leaf[0],
+                y + height * leaf[1],
+                leaf[2],
+                leaf[3],
+                leaf[4],
+            )
+    elif design_style == DESIGN_APOTHECARY:
+        pdf.setLineWidth(0.6)
+        for line_y in (0.20, 0.80):
+            pdf.line(x + width * 0.13, y + height * line_y, x + width * 0.38, y + height * line_y)
+            pdf.line(x + width * 0.62, y + height * line_y, x + width * 0.87, y + height * line_y)
+            center_y = y + height * line_y
+            center_x = x + width * 0.5
+            diamond = pdf.beginPath()
+            diamond.moveTo(center_x, center_y + 3)
+            diamond.lineTo(center_x + 4, center_y)
+            diamond.lineTo(center_x, center_y - 3)
+            diamond.lineTo(center_x - 4, center_y)
+            diamond.close()
+            pdf.drawPath(diamond, stroke=1, fill=0)
+    elif design_style == DESIGN_HONEYCOMB:
+        pdf.setLineWidth(0.55)
+        for hex_x, hex_y, radius in (
+            (0.02, 0.58, 9),
+            (0.06, 0.72, 9),
+            (0.015, 0.86, 9),
+            (0.95, 0.25, 9),
+            (0.99, 0.39, 9),
+            (0.95, 0.53, 9),
+        ):
+            _draw_hexagon(
+                pdf,
+                x + width * hex_x,
+                y + height * hex_y,
+                radius,
+            )
+    elif design_style == DESIGN_PREMIUM:
+        pdf.setLineWidth(0.6)
+        pdf.line(x + width * 0.11, y + height * 0.82, x + width * 0.37, y + height * 0.82)
+        pdf.line(x + width * 0.63, y + height * 0.18, x + width * 0.89, y + height * 0.18)
+        pdf.circle(x + width * 0.11, y + height * 0.82, 2.2, stroke=1, fill=0)
+        pdf.circle(x + width * 0.89, y + height * 0.18, 2.2, stroke=1, fill=0)
+
+    pdf.restoreState()
+
+
 def _draw_avery_94051_label(
     pdf: canvas.Canvas,
     *,
@@ -290,12 +492,22 @@ def _draw_avery_94051_label(
     include_batch_number: bool,
     border_style: str,
     border_color: str,
+    design_style: str,
 ) -> None:
-    """Draw the compact landscape design inside one 94051 oval."""
+    """Draw one selectable, compact design inside a 94051 oval."""
 
     width = AVERY_94051_WIDTH
     height = AVERY_94051_HEIGHT
+    theme = _avery_theme(design_style, border_color)
     pdf.saveState()
+    _draw_avery_theme_art(
+        pdf,
+        x=x,
+        y=y,
+        width=width,
+        height=height,
+        theme=theme,
+    )
     _draw_decorative_border(
         pdf,
         x=x,
@@ -307,40 +519,41 @@ def _draw_avery_94051_label(
         border_color=border_color,
     )
 
-    text_x = x + 0.30 * inch
-    text_width = 0.86 * inch
-    name_size = 10.5
-    name_lines = _wrap_name(batch.name, text_width, name_size)
-    top = y + height - 0.42 * inch
+    text_x = x + 0.35 * inch
+    text_width = 1.02 * inch
+    name_size = 10.8 if theme["design"] == DESIGN_MODERN else 10.3
+    name_font = theme["font"]
+    name_lines = _wrap_name(batch.name, text_width, name_size, name_font)
+    top = y + height - 0.38 * inch
 
-    pdf.setFillColor(BORDER_COLORS.get(border_color, BORDER_COLORS["amber"]))
-    pdf.setFont("Helvetica-Bold", 5.5)
+    pdf.setFillColor(theme["accent"])
+    pdf.setFont("Helvetica-Bold", 5.2)
     pdf.drawString(text_x, top, "HANDCRAFTED MEAD")
 
-    pdf.setFillColor(INK)
-    pdf.setFont("Helvetica-Bold", name_size)
-    name_y = top - 13
+    pdf.setFillColor(theme["text"])
+    pdf.setFont(name_font, name_size)
+    name_y = top - 13.5
     for line in name_lines:
         pdf.drawString(text_x, name_y, line)
         name_y -= name_size * 1.03
 
-    pdf.setFillColor(MUTED)
-    pdf.setFont("Helvetica", 6.3)
+    pdf.setFillColor(theme["muted"])
+    pdf.setFont(theme["body_font"], 6.2)
     pdf.drawString(text_x, name_y - 1.5, f"Started {_portable_started_date(batch)}")
     if include_batch_number and batch.batch_number:
         pdf.setFont("Helvetica-Bold", 5.5)
         pdf.drawString(text_x, name_y - 10, f"Batch {batch.batch_number}")
 
-    qr_size = 0.68 * inch
-    qr_x = x + 1.25 * inch
-    qr_y = y + (height - qr_size) / 2 + 3
+    qr_size = 0.64 * inch
+    qr_x = x + 1.57 * inch
+    qr_y = y + (height - qr_size) / 2 + 4
     _draw_qr(pdf, qr_url, x=qr_x, y=qr_y, size=qr_size)
 
-    pdf.setFillColor(INK)
+    pdf.setFillColor(theme["text"])
     pdf.setFont("Helvetica-Bold", 5.2)
     caption = "SCAN"
     caption_width = stringWidth(caption, "Helvetica-Bold", 5.2)
-    pdf.drawString(qr_x + (qr_size - caption_width) / 2, y + 0.25 * inch, caption)
+    pdf.drawString(qr_x + (qr_size - caption_width) / 2, y + 0.23 * inch, caption)
     pdf.restoreState()
 
 
@@ -354,6 +567,7 @@ def _draw_avery_94051_sheet(
     include_batch_number: bool,
     border_style: str,
     border_color: str,
+    design_style: str = DESIGN_HONEYCOMB,
 ) -> None:
     if not 1 <= start_position <= AVERY_94051_LABELS_PER_SHEET:
         raise ValueError("Avery 94051 start position must be between 1 and 18.")
@@ -396,6 +610,7 @@ def _draw_avery_94051_sheet(
             include_batch_number=include_batch_number,
             border_style=border_style,
             border_color=border_color,
+            design_style=design_style,
         )
 
 
@@ -418,6 +633,7 @@ def render_label_pdf(
     label_preset: str = "",
     border_style: str = "classic",
     border_color: str = "amber",
+    design_style: str = DESIGN_HONEYCOMB,
     start_position: int = 1,
 ) -> bytes:
     """Render exact-size labels or a generic cut-it-yourself Letter sheet."""
@@ -442,6 +658,7 @@ def render_label_pdf(
             include_batch_number=include_batch_number,
             border_style=border_style,
             border_color=border_color,
+            design_style=design_style,
         )
     elif output_mode == "letter":
         margin = 0.25 * inch

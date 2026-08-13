@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from datetime import date
+from decimal import Decimal
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
-from tracker.services.labels import _draw_avery_94051_sheet
+from tracker.services.labels import _draw_avery_94051_sheet, render_label_pdf
 
 
 class Avery94051SheetPlacementTests(SimpleTestCase):
@@ -82,3 +85,38 @@ class Avery94051SheetPlacementTests(SimpleTestCase):
                 border_style="classic",
                 border_color="amber",
             )
+
+
+class Avery94051DesignTests(SimpleTestCase):
+    def test_every_design_renders_a_valid_pdf(self):
+        batch = SimpleNamespace(
+            name="My First Mead",
+            start_date=date(2026, 7, 12),
+            batch_number="001",
+        )
+
+        for design_style in (
+            "minimal",
+            "modern",
+            "botanical",
+            "apothecary",
+            "honeycomb",
+            "premium",
+        ):
+            with self.subTest(design_style=design_style):
+                result = render_label_pdf(
+                    batch=batch,
+                    qr_url="https://mead.example.test/q/example/",
+                    width=Decimal("2.5"),
+                    height=Decimal("1.5"),
+                    dimension_unit="in",
+                    copies=1,
+                    output_mode="letter",
+                    include_batch_number=True,
+                    label_preset="avery-presta-94051",
+                    border_style="classic",
+                    border_color="amber",
+                    design_style=design_style,
+                )
+                self.assertTrue(result.startswith(b"%PDF-"))
+                self.assertGreater(len(result), 1_000)

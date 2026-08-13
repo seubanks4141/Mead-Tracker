@@ -358,6 +358,7 @@ def _label_preview_context(form: LabelSizeForm) -> dict:
         "start_position": 1,
         "border_style": LabelSizeForm.BORDER_CLASSIC,
         "border_color": LabelSizeForm.BORDER_AMBER,
+        "design_style": LabelSizeForm.DESIGN_HONEYCOMB,
     }
     if form.is_bound and not form.errors:
         values.update(form.cleaned_data)
@@ -376,6 +377,13 @@ def _label_preview_context(form: LabelSizeForm) -> dict:
         ),
         "label_border_style": values["border_style"],
         "label_border_color": border_color,
+        "label_design_style": values["design_style"],
+        "label_design_name": dict(LabelSizeForm.DESIGN_STYLE_CHOICES).get(
+            values["design_style"],
+            dict(LabelSizeForm.DESIGN_STYLE_CHOICES)[
+                LabelSizeForm.DESIGN_HONEYCOMB
+            ],
+        ),
         "label_border_color_value": LABEL_BORDER_COLOR_VALUES.get(
             border_color,
             LABEL_BORDER_COLOR_VALUES[LabelSizeForm.BORDER_AMBER],
@@ -945,6 +953,7 @@ def label_pdf(request, pk):
         "copies": "1",
         "start_position": "1",
         "include_batch_number": "on",
+        "design_style": LabelSizeForm.DESIGN_HONEYCOMB,
     }
     form = LabelSizeForm(form_data)
     qr_link = _active_qr_link(batch, request.user)
@@ -977,6 +986,7 @@ def label_pdf(request, pk):
         label_preset=values["preset"],
         border_style=values["border_style"],
         border_color=values["border_color"],
+        design_style=values["design_style"],
         start_position=values["start_position"],
     )
     LabelPrintLog.objects.create(

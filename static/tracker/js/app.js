@@ -369,6 +369,7 @@
     const dimensionUnit = $('[name="dimension_unit"]', labelForm);
     const dimensionUnitField = $(".field--dimension_unit", labelForm);
     const startPositionField = $(".field--start_position", labelForm);
+    const designStyleField = $(".field--design_style", labelForm);
 
     const syncCustomFields = () => {
       const custom = preset && preset.value === "custom";
@@ -388,6 +389,9 @@
         $$('input, select', startPositionField).forEach((input) => {
           input.disabled = !avery94051;
         });
+      }
+      if (designStyleField) {
+        designStyleField.hidden = !avery94051;
       }
     };
 

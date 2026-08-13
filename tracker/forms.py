@@ -333,6 +333,13 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
     BORDER_NAVY = "navy"
     BORDER_CHARCOAL = "charcoal"
 
+    DESIGN_MINIMAL = "minimal"
+    DESIGN_MODERN = "modern"
+    DESIGN_BOTANICAL = "botanical"
+    DESIGN_APOTHECARY = "apothecary"
+    DESIGN_HONEYCOMB = "honeycomb"
+    DESIGN_PREMIUM = "premium"
+
     PRESET_CHOICES = (
         (PRESET_3_X_4, '3 × 4 inches'),
         (PRESET_2_5_X_3, '2½ × 3 inches'),
@@ -363,8 +370,23 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         (BORDER_NAVY, "Deep navy"),
         (BORDER_CHARCOAL, "Charcoal"),
     )
+    DESIGN_STYLE_CHOICES = (
+        (DESIGN_MINIMAL, "A - Refined minimal"),
+        (DESIGN_MODERN, "B - Modern contrast"),
+        (DESIGN_BOTANICAL, "C - Botanical craft"),
+        (DESIGN_APOTHECARY, "D - Vintage apothecary"),
+        (DESIGN_HONEYCOMB, "E - Contemporary honeycomb"),
+        (DESIGN_PREMIUM, "F - Premium midnight"),
+    )
 
     preset = forms.ChoiceField(choices=PRESET_CHOICES, initial=PRESET_3_X_4)
+    design_style = forms.ChoiceField(
+        label="Label design",
+        choices=DESIGN_STYLE_CHOICES,
+        initial=DESIGN_HONEYCOMB,
+        required=False,
+        help_text="Available for the Avery 94051 oval label preset.",
+    )
     width = forms.DecimalField(
         required=False,
         min_value=Decimal("0.001"),
@@ -418,6 +440,17 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         required=False,
     )
 
+    def __init__(self, *args, **kwargs):
+        data = args[0] if args else kwargs.get("data")
+        if data is not None and "design_style" not in data:
+            data = data.copy()
+            data["design_style"] = self.DESIGN_HONEYCOMB
+            if args:
+                args = (data, *args[1:])
+            else:
+                kwargs["data"] = data
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         cleaned = super().clean()
         preset = cleaned.get("preset")
@@ -426,6 +459,9 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         )
         cleaned["border_color"] = (
             cleaned.get("border_color") or self.BORDER_AMBER
+        )
+        cleaned["design_style"] = (
+            cleaned.get("design_style") or self.DESIGN_HONEYCOMB
         )
         cleaned["start_position"] = cleaned.get("start_position") or 1
         if preset in self.PRESET_DIMENSIONS:
