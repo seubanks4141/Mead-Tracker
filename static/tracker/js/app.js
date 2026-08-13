@@ -366,6 +366,9 @@
     const customFields = [$(".field--width", labelForm), $(".field--height", labelForm)].filter(Boolean);
     const outputMode = $('[name="output_mode"]', labelForm);
     const outputModeField = $(".field--output_mode", labelForm);
+    const dimensionUnit = $('[name="dimension_unit"]', labelForm);
+    const dimensionUnitField = $(".field--dimension_unit", labelForm);
+    const startPositionField = $(".field--start_position", labelForm);
 
     const syncCustomFields = () => {
       const custom = preset && preset.value === "custom";
@@ -377,7 +380,15 @@
         });
       });
       if (outputMode && avery94051) outputMode.value = "letter";
+      if (dimensionUnit && avery94051) dimensionUnit.value = "in";
       if (outputModeField) outputModeField.hidden = avery94051;
+      if (dimensionUnitField) dimensionUnitField.hidden = avery94051;
+      if (startPositionField) {
+        startPositionField.hidden = !avery94051;
+        $$('input, select', startPositionField).forEach((input) => {
+          input.disabled = !avery94051;
+        });
+      }
     };
 
     if (preset) {

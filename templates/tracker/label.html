@@ -52,7 +52,7 @@
         <p>
           <strong>For accurate sizing</strong>
           Choose “Actual size” or “100%” in the print dialog. Do not use “Fit to page.”
-          {% if label_is_avery_94051 %}The 94051 preset fills positions from the top left, 18 labels per sheet.{% endif %}
+          {% if label_is_avery_94051 %}The 94051 sheet begins at position {{ label_start_position }}, then fills left to right and top to bottom.{% endif %}
         </p>
       </div>
     </section>
@@ -79,26 +79,43 @@
           aria-label="Preview of label for {{ batch.name }}"
         >
           <div class="mead-label__border" aria-hidden="true"></div>
-          <div class="mead-label__identity">
-            <div class="mead-label__rule"></div>
-            <div class="mead-label__ornament" aria-hidden="true">✦</div>
-            <p class="mead-label__kicker">Handcrafted mead</p>
-            <h3>{{ batch.name }}</h3>
-            {% if batch.style %}<p class="mead-label__style">{{ batch.style }}</p>{% endif %}
-          </div>
-          <div class="mead-label__qr-block">
-            <div class="mead-label__qr">
-              <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+          {% if label_is_avery_94051 %}
+            <div class="mead-label__avery-copy">
+              <p class="mead-label__kicker">Handcrafted mead</p>
+              <h3>{{ batch.name }}</h3>
+              <p class="mead-label__avery-date">
+                Started {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}Date not set{% endif %}
+              </p>
+              {% if batch.batch_number and label_form.include_batch_number.value %}<p class="mead-label__avery-batch">Batch {{ batch.batch_number }}</p>{% endif %}
             </div>
-            <p class="mead-label__scan">Scan for batch notes</p>
-          </div>
-          <div class="mead-label__footer">
-            <span>Started</span>
-            <strong>
-              {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}Date not set{% endif %}
-            </strong>
-            {% if batch.batch_number %}<small>Batch #{{ batch.batch_number }}</small>{% endif %}
-          </div>
+            <div class="mead-label__qr-block">
+              <div class="mead-label__qr">
+                <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+              </div>
+              <p class="mead-label__scan">Scan</p>
+            </div>
+          {% else %}
+            <div class="mead-label__identity">
+              <div class="mead-label__rule"></div>
+              <div class="mead-label__ornament" aria-hidden="true">✦</div>
+              <p class="mead-label__kicker">Handcrafted mead</p>
+              <h3>{{ batch.name }}</h3>
+              {% if batch.style %}<p class="mead-label__style">{{ batch.style }}</p>{% endif %}
+            </div>
+            <div class="mead-label__qr-block">
+              <div class="mead-label__qr">
+                <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+              </div>
+              <p class="mead-label__scan">Scan for batch notes</p>
+            </div>
+            <div class="mead-label__footer">
+              <span>Started</span>
+              <strong>
+                {% if batch.start_date %}{{ batch.start_date|date:"M j, Y" }}{% elif batch.started_at %}{{ batch.started_at|date:"M j, Y" }}{% else %}Date not set{% endif %}
+              </strong>
+              {% if batch.batch_number %}<small>Batch #{{ batch.batch_number }}</small>{% endif %}
+            </div>
+          {% endif %}
         </article>
       </div>
 

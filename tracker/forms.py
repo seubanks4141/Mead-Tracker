@@ -392,8 +392,18 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         max_value=100,
         initial=1,
         help_text=(
-            "Avery sheets fill from the top left and continue onto another sheet "
-            "after 18 labels."
+            "Avery sheets continue onto another sheet after position 18."
+        ),
+    )
+    start_position = forms.IntegerField(
+        label="Start at label",
+        required=False,
+        min_value=1,
+        max_value=18,
+        initial=1,
+        help_text=(
+            "For Avery 94051 sheets, position 1 is the top-left label. "
+            "Count left to right, then continue on the next row."
         ),
     )
     include_batch_number = forms.BooleanField(required=False, initial=True)
@@ -417,12 +427,17 @@ class LabelSizeForm(StyledFormMixin, forms.Form):
         cleaned["border_color"] = (
             cleaned.get("border_color") or self.BORDER_AMBER
         )
+        cleaned["start_position"] = cleaned.get("start_position") or 1
         if preset in self.PRESET_DIMENSIONS:
             cleaned["width"], cleaned["height"] = self.PRESET_DIMENSIONS[preset]
             cleaned["dimension_unit"] = LabelPrintLog.DimensionUnit.INCH
             if preset == self.PRESET_AVERY_PRESTA_94051:
                 cleaned["output_mode"] = LabelPrintLog.OutputMode.LETTER_SHEET
+            else:
+                cleaned["start_position"] = 1
             return cleaned
+
+        cleaned["start_position"] = 1
 
         width = cleaned.get("width")
         height = cleaned.get("height")

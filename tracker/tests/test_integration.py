@@ -1002,6 +1002,7 @@ class TrackerIntegrationTests(TestCase):
             "dimension_unit": "mm",
             "output_mode": "single",
             "copies": "19",
+            "start_position": "5",
             "include_batch_number": "on",
             "border_style": "double",
             "border_color": "forest",
@@ -1016,12 +1017,21 @@ class TrackerIntegrationTests(TestCase):
         self.assertEqual(preview.context["label_height"], Decimal("1.500"))
         self.assertTrue(preview.context["label_is_avery_94051"])
         self.assertEqual(preview.context["label_orientation"], "landscape")
+        self.assertEqual(preview.context["label_start_position"], 5)
         self.assertContains(preview, "Avery Presta® 94051")
         self.assertContains(preview, "mead-label--avery-94051")
+        self.assertContains(preview, "mead-label__avery-copy")
+        self.assertContains(preview, "mead-label__avery-date")
+        self.assertNotContains(preview, "mead-label__footer")
         self.assertContains(preview, "mead-label--border-double")
         self.assertContains(preview, "--label-border-color: #315e45")
+        self.assertContains(preview, "begins at position 5")
+        self.assertContains(preview, 'name="start_position"')
+        self.assertContains(preview, 'value="5"')
         self.assertContains(preview, "Summer Solstice")
         self.assertContains(preview, "Jun 21, 2026")
+        self.assertContains(preview, "Batch B-001")
+        self.assertNotContains(preview, "Traditional")
         self.assertContains(
             preview,
             reverse("tracker:qr_svg", args=[self.batch.pk]),
@@ -1058,6 +1068,12 @@ class TrackerIntegrationTests(TestCase):
         self.assertEqual(print_log.dimension_unit, "in")
         self.assertEqual(print_log.output_mode, "letter")
         self.assertEqual(print_log.copies, 19)
+
+        invalid_start = self.client.get(
+            reverse("tracker:label_pdf", args=[self.batch.pk]),
+            {**options, "start_position": "19"},
+        )
+        self.assertEqual(invalid_start.status_code, 400)
 
     def test_json_export_contains_active_batch_history_and_entries(self):
         BatchStatusHistory.objects.create(

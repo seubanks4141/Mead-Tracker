@@ -4772,17 +4772,14 @@ body:has(.photo-lightbox[open]) {
 }
 
 .mead-label--avery-94051 {
-  display: grid;
+  display: block;
   width: min(100%, 34rem);
   min-width: 22rem;
-  padding: 1.4rem 2.6rem 1.3rem;
-  background:
-    radial-gradient(circle at 34% 48%, rgba(236, 196, 127, 0.2), transparent 9rem),
-    #fffdf5;
+  padding: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  background: #fff;
+  border: 0;
   border-radius: 50%;
-  column-gap: 0.85rem;
-  grid-template-columns: minmax(0, 1fr) minmax(5rem, 0.62fr);
-  grid-template-rows: minmax(0, 1fr) auto;
   text-align: left;
 }
 
@@ -4793,81 +4790,93 @@ body:has(.photo-lightbox[open]) {
 
 .mead-label--avery-94051 .mead-label__border {
   border-radius: 50%;
-  inset: 0.42rem;
+  border-width: 2px;
+  border-style: solid;
+  inset: 4% 2.4%;
 }
 
-.mead-label--avery-94051 .mead-label__identity {
-  display: flex;
-  min-width: 0;
-  align-items: flex-start;
-  flex-direction: column;
-  grid-column: 1;
-  grid-row: 1;
-  justify-content: center;
+.mead-label--avery-94051.mead-label--border-double .mead-label__border::after {
+  position: absolute;
+  border: 1px solid var(--label-border-color);
+  border-radius: 50%;
+  content: "";
+  inset: 5%;
 }
 
-.mead-label--avery-94051 .mead-label__rule {
-  width: 70%;
-  height: 2px;
-  margin-bottom: 0.25rem;
+.mead-label--avery-94051.mead-label--border-dotted .mead-label__border {
+  border-width: 2px;
+  border-style: dotted;
 }
 
-.mead-label--avery-94051 .mead-label__ornament {
-  display: none;
+.mead-label--avery-94051 .mead-label__avery-copy {
+  position: absolute;
+  z-index: 2;
+  top: 21%;
+  left: 12%;
+  width: 35%;
 }
 
 .mead-label--avery-94051 .mead-label__kicker {
-  margin: 0.2rem 0 0.35rem;
+  margin: 0 0 0.35rem;
   color: var(--label-border-color);
-  font-size: 0.48rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: clamp(0.42rem, 1.15vw, 0.68rem);
+  letter-spacing: 0;
 }
 
 .mead-label--avery-94051 h3 {
-  margin-bottom: 0.15rem;
-  font-size: clamp(1.15rem, 3.5vw, 1.65rem);
-  line-height: 0.98;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: clamp(1.05rem, 3.2vw, 1.85rem);
+  line-height: 1.02;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-.mead-label--avery-94051 .mead-label__style {
-  margin: 0;
-  font-size: 0.56rem;
+.mead-label--avery-94051 .mead-label__avery-date {
+  margin: 0.5rem 0 0;
+  color: #65756c;
+  font-size: clamp(0.46rem, 1.25vw, 0.72rem);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.mead-label--avery-94051 .mead-label__avery-batch {
+  margin: 0.3rem 0 0;
+  color: #65756c;
+  font-size: clamp(0.42rem, 1.1vw, 0.64rem);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .mead-label--avery-94051 .mead-label__qr-block {
-  display: flex;
-  min-width: 0;
+  position: absolute;
+  z-index: 2;
+  top: 24.5%;
+  left: 50%;
+  display: block;
+  width: 27.2%;
   align-items: center;
-  align-self: center;
-  flex-direction: column;
-  grid-column: 2;
-  grid-row: 1 / 3;
+  text-align: center;
 }
 
 .mead-label--avery-94051 .mead-label__qr,
 .mead-label--landscape.mead-label--avery-94051 .mead-label__qr {
-  width: min(100%, 6.2rem);
-  padding: 0.25rem;
+  width: 100%;
+  padding: 0;
+  background: #fff;
+  border: 0;
 }
 
 .mead-label--avery-94051 .mead-label__scan {
-  margin-bottom: 0;
+  margin: 0.55rem 0 0;
+  color: #17261e;
+  font-size: clamp(0.42rem, 1vw, 0.62rem);
+  letter-spacing: 0;
   text-align: center;
-}
-
-.mead-label--avery-94051 .mead-label__footer {
-  width: auto;
-  padding-top: 0.35rem;
-  margin-top: 0.4rem;
-  align-self: end;
-  border-color: var(--label-border-color);
-  grid-column: 1;
-  grid-row: 2;
-  justify-self: stretch;
-  text-align: left;
-}
-
-.mead-label--avery-94051 .mead-label__footer > span {
-  color: var(--label-border-color);
 }
 
 .label-actions {
@@ -6752,14 +6761,6 @@ html[data-theme="dark"] textarea::placeholder {
 
   .mead-label--avery-94051 {
     min-width: 17rem;
-    padding: 1rem 1.8rem 0.9rem;
-    column-gap: 0.55rem;
-    grid-template-columns: minmax(0, 1fr) minmax(4.1rem, 0.6fr);
-  }
-
-  .mead-label--avery-94051 .mead-label__qr,
-  .mead-label--landscape.mead-label--avery-94051 .mead-label__qr {
-    width: min(100%, 4.8rem);
   }
 
   .label-actions {

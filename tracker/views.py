@@ -355,6 +355,7 @@ def _label_preview_context(form: LabelSizeForm) -> dict:
             LabelSizeForm.PRESET_3_X_4
         ][1],
         "dimension_unit": LabelPrintLog.DimensionUnit.INCH,
+        "start_position": 1,
         "border_style": LabelSizeForm.BORDER_CLASSIC,
         "border_color": LabelSizeForm.BORDER_AMBER,
     }
@@ -380,6 +381,7 @@ def _label_preview_context(form: LabelSizeForm) -> dict:
             LABEL_BORDER_COLOR_VALUES[LabelSizeForm.BORDER_AMBER],
         ),
         "label_dimension_unit": values["dimension_unit"],
+        "label_start_position": values["start_position"],
     }
 
 
@@ -941,6 +943,7 @@ def label_pdf(request, pk):
         "dimension_unit": LabelPrintLog.DimensionUnit.INCH,
         "output_mode": LabelPrintLog.OutputMode.SINGLE,
         "copies": "1",
+        "start_position": "1",
         "include_batch_number": "on",
     }
     form = LabelSizeForm(form_data)
@@ -974,6 +977,7 @@ def label_pdf(request, pk):
         label_preset=values["preset"],
         border_style=values["border_style"],
         border_color=values["border_color"],
+        start_position=values["start_position"],
     )
     LabelPrintLog.objects.create(
         batch=batch,

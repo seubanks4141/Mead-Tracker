@@ -350,10 +350,14 @@ def _draw_avery_94051_sheet(
     batch,
     qr_url: str,
     copies: int,
+    start_position: int,
     include_batch_number: bool,
     border_style: str,
     border_color: str,
 ) -> None:
+    if not 1 <= start_position <= AVERY_94051_LABELS_PER_SHEET:
+        raise ValueError("Avery 94051 start position must be between 1 and 18.")
+
     page_width, page_height = letter
     horizontal_gap = (
         page_width
@@ -366,8 +370,10 @@ def _draw_avery_94051_sheet(
         - AVERY_94051_ROWS * AVERY_94051_HEIGHT
     ) / (AVERY_94051_ROWS - 1)
 
+    first_slot = start_position - 1
     for copy_index in range(copies):
-        slot = copy_index % AVERY_94051_LABELS_PER_SHEET
+        absolute_slot = first_slot + copy_index
+        slot = absolute_slot % AVERY_94051_LABELS_PER_SHEET
         if slot == 0 and copy_index:
             pdf.showPage()
         row = slot // AVERY_94051_COLUMNS
@@ -412,6 +418,7 @@ def render_label_pdf(
     label_preset: str = "",
     border_style: str = "classic",
     border_color: str = "amber",
+    start_position: int = 1,
 ) -> bytes:
     """Render exact-size labels or a generic cut-it-yourself Letter sheet."""
 
@@ -431,6 +438,7 @@ def render_label_pdf(
             batch=batch,
             qr_url=qr_url,
             copies=copies,
+            start_position=start_position,
             include_batch_number=include_batch_number,
             border_style=border_style,
             border_color=border_color,
