@@ -94,9 +94,8 @@
             </div>
             <div class="mead-label__qr-block">
               <div class="mead-label__qr">
-                <img src="{% url 'tracker:qr_svg' batch.pk %}" alt="" width="210" height="210">
+                <img src="{% url 'tracker:qr_svg' batch.pk %}?compact=1" alt="" width="210" height="210">
               </div>
-              <p class="mead-label__scan">Scan</p>
             </div>
           {% else %}
             <div class="mead-label__identity">

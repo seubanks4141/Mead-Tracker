@@ -7,7 +7,12 @@ from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase
 
-from tracker.services.labels import _draw_avery_94051_sheet, render_label_pdf
+from tracker.services.labels import (
+    AVERY_94051_HEIGHT,
+    _draw_avery_94051_label,
+    _draw_avery_94051_sheet,
+    render_label_pdf,
+)
 
 
 class Avery94051SheetPlacementTests(SimpleTestCase):
@@ -88,6 +93,39 @@ class Avery94051SheetPlacementTests(SimpleTestCase):
 
 
 class Avery94051DesignTests(SimpleTestCase):
+    @patch("tracker.services.labels._draw_qr")
+    def test_label_centers_qr_and_omits_scan_caption(self, draw_qr):
+        pdf = MagicMock()
+        batch = SimpleNamespace(
+            name="My First Mead",
+            start_date=date(2026, 7, 12),
+            batch_number="001",
+        )
+
+        _draw_avery_94051_label(
+            pdf,
+            batch=batch,
+            qr_url="https://mead.example.test/q/example/",
+            x=10,
+            y=20,
+            include_batch_number=True,
+            border_style="classic",
+            border_color="forest",
+            design_style="botanical",
+        )
+
+        qr_size = 0.64 * 72
+        self.assertAlmostEqual(
+            draw_qr.call_args.kwargs["y"],
+            20 + (AVERY_94051_HEIGHT - qr_size) / 2,
+        )
+        drawn_text = [
+            call.args[2]
+            for call in pdf.drawString.call_args_list
+            if len(call.args) >= 3
+        ]
+        self.assertNotIn("SCAN", drawn_text)
+
     def test_every_design_renders_a_valid_pdf(self):
         batch = SimpleNamespace(
             name="My First Mead",

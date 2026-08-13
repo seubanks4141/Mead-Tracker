@@ -4820,9 +4820,10 @@ body:has(.photo-lightbox[open]) {
 .mead-label--avery-94051 .mead-label__avery-copy {
   position: absolute;
   z-index: 2;
-  top: 21%;
+  top: 50%;
   left: 14%;
   width: 41%;
+  transform: translateY(-50%);
 }
 
 .mead-label--avery-94051 .mead-label__kicker {
@@ -4864,12 +4865,13 @@ body:has(.photo-lightbox[open]) {
 .mead-label--avery-94051 .mead-label__qr-block {
   position: absolute;
   z-index: 2;
-  top: 24.5%;
+  top: 50%;
   left: 62.8%;
   display: block;
   width: 25.6%;
   align-items: center;
   text-align: center;
+  transform: translateY(-50%);
 }
 
 .mead-label--avery-94051 .mead-label__qr,
@@ -4880,12 +4882,8 @@ body:has(.photo-lightbox[open]) {
   border: 0;
 }
 
-.mead-label--avery-94051 .mead-label__scan {
-  margin: 0.55rem 0 0;
-  color: #17261e;
-  font-size: clamp(0.42rem, 1vw, 0.62rem);
-  letter-spacing: 0;
-  text-align: center;
+.mead-label--avery-94051 .mead-label__qr img {
+  display: block;
 }
 
 .mead-label--avery-94051 .mead-label__theme-art {
@@ -4958,10 +4956,8 @@ body:has(.photo-lightbox[open]) {
 .mead-label--design-modern .mead-label__kicker,
 .mead-label--design-modern .mead-label__avery-date,
 .mead-label--design-modern .mead-label__avery-batch,
-.mead-label--design-modern .mead-label__scan,
 .mead-label--design-premium .mead-label__avery-date,
-.mead-label--design-premium .mead-label__avery-batch,
-.mead-label--design-premium .mead-label__scan {
+.mead-label--design-premium .mead-label__avery-batch {
   color: #fff;
 }
 

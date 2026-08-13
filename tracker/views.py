@@ -931,7 +931,7 @@ def qr_svg(request, pk):
         stream,
         kind="svg",
         scale=7,
-        border=4,
+        border=2 if request.GET.get("compact") == "1" else 4,
         dark="#17261e",
         light="#ffffff",
         xmldecl=False,

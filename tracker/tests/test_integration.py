@@ -940,6 +940,17 @@ class TrackerIntegrationTests(TestCase):
         self.assertIn('class="segno"', svg)
         self.assertIn('class="qrline"', svg)
 
+    @patch("tracker.views.segno.make")
+    def test_compact_label_qr_uses_tighter_border(self, make_qr):
+        self.login_as_owner()
+        response = self.client.get(
+            reverse("tracker:qr_svg", args=[self.batch.pk]),
+            {"compact": "1"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(make_qr.return_value.save.call_args.kwargs["border"], 2)
+
     def test_exact_size_pdf_label_response_and_print_log(self):
         self.login_as_owner()
         response = self.client.get(
@@ -1025,6 +1036,8 @@ class TrackerIntegrationTests(TestCase):
         self.assertContains(preview, "mead-label--avery-94051")
         self.assertContains(preview, "mead-label__avery-copy")
         self.assertContains(preview, "mead-label__avery-date")
+        self.assertContains(preview, "?compact=1")
+        self.assertNotContains(preview, '<p class="mead-label__scan">Scan</p>')
         self.assertNotContains(preview, "mead-label__footer")
         self.assertContains(preview, "mead-label--border-double")
         self.assertContains(preview, "mead-label--design-premium")

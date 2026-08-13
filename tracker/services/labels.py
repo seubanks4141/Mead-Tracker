@@ -132,7 +132,7 @@ def _draw_qr(
     y: float,
     size: float,
 ) -> None:
-    quiet = max(4.0, size * 0.045)
+    quiet = max(2.0, size * 0.025)
     pdf.setFillColor(white)
     pdf.roundRect(
         x - quiet,
@@ -524,7 +524,10 @@ def _draw_avery_94051_label(
     name_size = 10.8 if theme["design"] == DESIGN_MODERN else 10.3
     name_font = theme["font"]
     name_lines = _wrap_name(batch.name, text_width, name_size, name_font)
-    top = y + height - 0.38 * inch
+    after_name_offset = 13.5 + len(name_lines) * name_size * 1.03
+    has_batch_number = include_batch_number and bool(batch.batch_number)
+    bottom_offset = after_name_offset + (10 if has_batch_number else 1.5)
+    top = y + height / 2 + (bottom_offset - 2.5) / 2
 
     pdf.setFillColor(theme["accent"])
     pdf.setFont("Helvetica-Bold", 5.2)
@@ -540,20 +543,14 @@ def _draw_avery_94051_label(
     pdf.setFillColor(theme["muted"])
     pdf.setFont(theme["body_font"], 6.2)
     pdf.drawString(text_x, name_y - 1.5, f"Started {_portable_started_date(batch)}")
-    if include_batch_number and batch.batch_number:
+    if has_batch_number:
         pdf.setFont("Helvetica-Bold", 5.5)
         pdf.drawString(text_x, name_y - 10, f"Batch {batch.batch_number}")
 
     qr_size = 0.64 * inch
     qr_x = x + 1.57 * inch
-    qr_y = y + (height - qr_size) / 2 + 4
+    qr_y = y + (height - qr_size) / 2
     _draw_qr(pdf, qr_url, x=qr_x, y=qr_y, size=qr_size)
-
-    pdf.setFillColor(theme["text"])
-    pdf.setFont("Helvetica-Bold", 5.2)
-    caption = "SCAN"
-    caption_width = stringWidth(caption, "Helvetica-Bold", 5.2)
-    pdf.drawString(qr_x + (qr_size - caption_width) / 2, y + 0.23 * inch, caption)
     pdf.restoreState()
 
 
